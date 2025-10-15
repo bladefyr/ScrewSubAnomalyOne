@@ -1,0 +1,10 @@
+gradlew
+gradlew.bat
+mcreator.gradle
+/.gradle
+/.mcreator
+/build
+/run
+/.idea
+/gradle
+/.eclipse

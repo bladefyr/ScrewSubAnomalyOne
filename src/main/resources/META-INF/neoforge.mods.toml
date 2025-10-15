@@ -1,0 +1,42 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="screw_subanomalyone"
+version="2.0"
+displayName="Screw SubAnomalyOne"
+displayURL="https://modrinth.com/user/blade_fyr"
+logoFile="logo.png"
+credits="made by blade_fyr"
+authors="blade_fyr"
+description="Tired of SubAnomalyOne? This mod removes him out of the game! Now without the MCreator spaghetti code!"
+
+# Start of user code block mod configuration
+# End of user code block mod configuration
+
+[[dependencies.screw_subanomalyone]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.100,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.screw_subanomalyone]]
+modId="minecraft"
+type="required"
+versionRange="[1.20.1, 1.21.1]"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.screw_subanomalyone]]
+modId="thebrokenscript"
+type="required"
+versionRange="[1.9.3,]"
+ordering="NONE"
+side="BOTH"
+
+
+
+# Start of user code block dependencies configuration
+# End of user code block dependencies configuration

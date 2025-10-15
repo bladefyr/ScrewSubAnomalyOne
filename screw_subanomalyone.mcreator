@@ -1,0 +1,105 @@
+{
+  "mod_elements": [
+    {
+      "name": "IfTbsInstalledProcedure",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "if_tbs_installed_procedure",
+      "metadata": {
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/fucksubanomalyone/procedures/IfTbsInstalledProcedureProcedure.java"
+        ],
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/CheckIfTBSInstalled"
+    },
+    {
+      "name": "DespawnSubAnomalyOneOnSpawn",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "despawn_sub_anomaly_one_on_spawn",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/fucksubanomalyone/procedures/DespawnSubAnomalyOneOnSpawnProcedure.java"
+        ],
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/FuckSAOne"
+    }
+  ],
+  "variable_elements": [
+    {
+      "name": "isTBSInstalled",
+      "type": "logic",
+      "scope": "player_persistent",
+      "value": "false"
+    }
+  ],
+  "sound_elements": [],
+  "tag_elements": {},
+  "tab_element_order": {},
+  "language_map": {
+    "en_us": {}
+  },
+  "foldersRoot": {
+    "name": "~",
+    "children": [
+      {
+        "name": "CheckIfTBSInstalled",
+        "children": []
+      },
+      {
+        "name": "FuckSAOne",
+        "children": []
+      }
+    ]
+  },
+  "workspaceSettings": {
+    "modid": "fuck_subanomalyone",
+    "modName": "Fuck SubAnomalyOne",
+    "version": "1.0.0",
+    "description": "Tired of SubAnomalyOne? This mod removes him out of the game!",
+    "author": "blade_fyr",
+    "websiteURL": "https://modrinth.com/user/blade_fyr",
+    "license": "All Rights Reserved",
+    "serverSideOnly": false,
+    "modPicture": "fsubanomalyone",
+    "requiredMods": [],
+    "dependencies": [],
+    "dependants": [],
+    "mcreatorDependencies": [],
+    "currentGenerator": "neoforge-1.21.1",
+    "credits": "made by blade_fyr",
+    "modElementsPackage": "net.mcreator.screwsubanomalyone"
+  },
+  "mcreatorVersion": 202500113416
+}
