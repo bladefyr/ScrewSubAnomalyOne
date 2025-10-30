@@ -1,1 +1,6 @@
-{}
+{
+  "screw_subanomalyone.configuration.entityRemovalSettings": "Entity Removal Settings",
+  "screwsubanomalyone.config.entitiesToRemove": "Entities to Remove",
+  "screwsubanomalyone.config.enableLogging": "Enable Logging",
+  "screwsubanomalyone.config.logMessage": "Log Message"
+}
