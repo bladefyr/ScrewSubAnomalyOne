@@ -1,2 +1,2 @@
-# ScrewSubAnomalyOne
-Codebase for the Minecraft Mod "ScrewSubAnomalyOne". Link: https://modrinth.com/mod/screwsubanomalyone
+# fuck_subanomalyone
+Old Forge version of "ScrewSubAnomalyOne", archived for your convenience. Link to updated version: https://modrinth.com/mod/screwsubanomalyone
