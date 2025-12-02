@@ -3,38 +3,32 @@ loaderVersion="[4,)"
 license="All Rights Reserved"
 
 [[mods]]
-modId="screw_subanomalyone"
-version="3.0"
-displayName="Screw SubAnomalyOne"
+modId="fuck_subanomalyone"
+version="1.0.0"
+displayName="Fuck SubAnomalyOne"
 displayURL="https://modrinth.com/user/blade_fyr"
 logoFile="logo.png"
 credits="made by blade_fyr"
 authors="blade_fyr"
-description="Tired of SubAnomalyOne? This mod literally discards him! Now supports listing other entities/mobs via config!"
+description="Tired of SubAnomalyOne? This mod removes him out of the game!"
 
 # Start of user code block mod configuration
 # End of user code block mod configuration
 
-[[dependencies.screw_subanomalyone]]
-modId="neoforge"
-type="required"
-versionRange="[21.1.100,)"
-ordering="NONE"
-side="BOTH"
+[[dependencies.fuck_subanomalyone]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1.65,)"
+    ordering="AFTER"
+    side="BOTH"
 
-[[dependencies.screw_subanomalyone]]
-modId="minecraft"
-type="required"
-versionRange="[1.21.1,]"
-ordering="NONE"
-side="BOTH"
+[[dependencies.fuck_subanomalyone]]
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21.1]"
+    ordering="AFTER"
+    side="BOTH"
 
-[[dependencies.screw_subanomalyone]]
-modId="thebrokenscript"
-type="required"
-versionRange="[1.9.3,]"
-ordering="NONE"
-side="BOTH"
 
 
 
