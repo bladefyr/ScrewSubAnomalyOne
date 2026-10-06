@@ -11,7 +11,7 @@ public class ServerLifecycleHandler {
 
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
-        // Re-load now that the world folder exists
         RuleManager.reload();
+        EntityPurger.purgeAll();
     }
 }

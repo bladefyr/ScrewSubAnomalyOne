@@ -1,6 +1,7 @@
 package vinn.tekk.screwyourmobs.commands;
 
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
+import vinn.tekk.screwyourmobs.procedures.EntityPurger;
 import vinn.tekk.screwyourmobs.rules.RemovalRule;
 import vinn.tekk.screwyourmobs.rules.RuleManager;
 import com.mojang.brigadier.CommandDispatcher;
@@ -26,6 +27,7 @@ public class EntityRemovalCommands {
                 Commands.literal("sym")
                         .requires(src -> src.hasPermission(2))
                         .then(Commands.literal("reload").executes(EntityRemovalCommands::reload))
+                        .then(Commands.literal("purge").executes(EntityRemovalCommands::purge))
                         .then(Commands.literal("list").executes(EntityRemovalCommands::list))
                         .then(Commands.literal("stats").executes(EntityRemovalCommands::stats))
         );
@@ -33,8 +35,19 @@ public class EntityRemovalCommands {
 
     private static int reload(CommandContext<CommandSourceStack> ctx) {
         RuleManager.reload();
+        int purged = EntityPurger.purgeAll();
+        int ruleCount = RuleManager.getTotalRules();
         ctx.getSource().sendSuccess(
-                () -> Component.literal("§a[ScrewYourMobs!name] Reloaded " + RuleManager.getTotalRules() + " rules."),
+                () -> Component.literal("§a[ScrewYourMobs!] Reloaded " + ruleCount
+                        + " rules. Purged " + purged + " existing entities."),
+                true);
+        return 1;
+    }
+
+    private static int purge(CommandContext<CommandSourceStack> ctx) {
+        int purged = EntityPurger.purgeAll();
+        ctx.getSource().sendSuccess(
+                () -> Component.literal("§a[ScrewYourMobs!] Purged " + purged + " existing entities."),
                 true);
         return 1;
     }
