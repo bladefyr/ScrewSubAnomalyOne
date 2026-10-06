@@ -1,7 +1,7 @@
-package com.bladelicious.screwsubanomalyone;
+package vinn.tekk.screwyourmobs;
 
-import com.bladelicious.screwsubanomalyone.config.EntityRemovalConfig;
-import com.bladelicious.screwsubanomalyone.procedures.DespawnHim;
+import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
+import vinn.tekk.screwyourmobs.procedures.EntityRemovalHandler;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -14,13 +14,18 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-@Mod(ScrewSubanomalyoneMod.MODID)
-public class ScrewSubanomalyoneMod {
-    public static final Logger LOGGER = LogManager.getLogger(ScrewSubanomalyoneMod.class);
-    public static final String MODID = "screw_subanomalyone";
+@Mod(ScrewYourMobsMod.MODID)
+public class ScrewYourMobsMod {
 
-    public ScrewSubanomalyoneMod(IEventBus modEventBus, ModContainer container) {
-        container.registerConfig(ModConfig.Type.COMMON, EntityRemovalConfig.SPECIFICATION);
+    public static final String MODID = "screwyourmobs";
+    public static final Logger LOGGER = LogManager.getLogger(MODID);
+
+    public ScrewYourMobsMod(IEventBus modEventBus, ModContainer container) {
+        container.registerConfig(
+                ModConfig.Type.COMMON,
+                EntityRemovalConfig.SPECIFICATION,
+                "sym/screwyourmobs-common.toml"
+        );
 
         modEventBus.addListener(this::onConfigLoading);
         modEventBus.addListener(this::onConfigReloading);
@@ -29,20 +34,18 @@ public class ScrewSubanomalyoneMod {
             container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         }
 
-        LOGGER.info("ScrewSubAnomaly1 successfully loaded!!11!111!1!!");
+        LOGGER.info("ScrewYourMobs! initialized.");
     }
 
     private void onConfigLoading(ModConfigEvent.Loading event) {
         if (event.getConfig().getSpec() == EntityRemovalConfig.SPECIFICATION) {
-            LOGGER.info("Loading entity removal config");
-            DespawnHim.markConfigForReload();
+            EntityRemovalHandler.markConfigForReload();
         }
     }
 
     private void onConfigReloading(ModConfigEvent.Reloading event) {
         if (event.getConfig().getSpec() == EntityRemovalConfig.SPECIFICATION) {
-            LOGGER.info("Reloading entity removal config");
-            DespawnHim.markConfigForReload();
+            EntityRemovalHandler.markConfigForReload();
         }
     }
 }
