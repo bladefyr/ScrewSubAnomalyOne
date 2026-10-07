@@ -1,6 +1,8 @@
 package vinn.tekk.screwyourmobs.rules;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityType;
 
 import java.util.Set;
 
@@ -12,6 +14,7 @@ import java.util.Set;
 public record RemovalRule(
         String name,
         Set<ResourceLocation> entities,
+        Set<TagKey<EntityType<?>>> entityTags,
         Set<ResourceLocation> dimensions
 ) {
     public boolean isGlobal() {

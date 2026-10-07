@@ -4,7 +4,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityType;
 import net.neoforged.fml.loading.FMLPaths;
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
 import vinn.tekk.screwyourmobs.debug.DebugLog;
@@ -118,16 +121,56 @@ public final class RuleLoader {
             }
 
             JsonObject obj = root.getAsJsonObject();
-            Set<ResourceLocation> entities = parseIdSet(obj.getAsJsonArray("entities"), name, "entities");
+
+            // Split entity entries into IDs and tags
+            Set<ResourceLocation> entities = new HashSet<>();
+            Set<TagKey<EntityType<?>>> entityTags = new HashSet<>();
+            parseEntityEntries(obj.getAsJsonArray("entities"), name, entities, entityTags);
+
             Set<ResourceLocation> dimensions = parseIdSet(obj.getAsJsonArray("dimensions"), name, "dimensions");
 
-            if (entities.isEmpty()) {
+            if (entities.isEmpty() && entityTags.isEmpty()) {
                 DebugLog.log(DebugLog.Channel.RULE_ERROR,
-                        "Rule '%s' has no entities - skipped.", name);
+                        "Rule '%s' has no entities or tags - skipped.", name);
                 return null;
             }
 
-            return new RemovalRule(name, entities, dimensions);
+            return new RemovalRule(name, entities, entityTags, dimensions);
+        }
+    }
+
+    private static void parseEntityEntries(JsonArray array, String ruleName,
+                                           Set<ResourceLocation> outIds,
+                                           Set<TagKey<EntityType<?>>> outTags) {
+        if (array == null) return;
+
+        for (JsonElement el : array) {
+            if (!el.isJsonPrimitive() || !el.getAsJsonPrimitive().isString()) {
+                DebugLog.log(DebugLog.Channel.RULE_ERROR,
+                        "Rule '%s' field 'entities' has non-string entry - skipped.", ruleName);
+                continue;
+            }
+            String raw = el.getAsString().trim();
+            if (raw.isEmpty()) continue;
+
+            if (raw.startsWith("#")) {
+                String tagId = raw.substring(1); // strip #
+                ResourceLocation rl = ResourceLocation.tryParse(tagId);
+                if (rl == null) {
+                    DebugLog.log(DebugLog.Channel.RULE_ERROR,
+                            "Rule '%s' has invalid entity tag '%s' - skipped.", ruleName, raw);
+                    continue;
+                }
+                outTags.add(TagKey.create(Registries.ENTITY_TYPE, rl));
+            } else {
+                ResourceLocation rl = ResourceLocation.tryParse(raw);
+                if (rl == null) {
+                    DebugLog.log(DebugLog.Channel.RULE_ERROR,
+                            "Rule '%s' has invalid entity ID '%s' - skipped.", ruleName, raw);
+                    continue;
+                }
+                outIds.add(rl);
+            }
         }
     }
 

@@ -62,6 +62,6 @@ public final class EntityPurger {
         if (entity instanceof Mob mob && mob.hasCustomName()) return false;
         if (entity instanceof TamableAnimal tame && tame.isTame()) return false;
 
-        return RuleManager.findMatch(typeId, dimId) != null;
+        return RuleManager.findMatch(typeId, dimId, entity.getType()) != null;
     }
 }

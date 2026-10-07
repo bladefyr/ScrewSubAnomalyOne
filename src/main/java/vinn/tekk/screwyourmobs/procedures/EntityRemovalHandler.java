@@ -59,7 +59,7 @@ public class EntityRemovalHandler {
         if (KEEP_IDS.contains(typeId)) return;
 
         ResourceLocation dimId = level.dimension().location();
-        RemovalRule match = RuleManager.findMatch(typeId, dimId);
+        RemovalRule match = RuleManager.findMatch(typeId, dimId, type);
         if (match == null) return;
 
         if (EntityRemovalConfig.DEBUG_ENABLED.get()) {

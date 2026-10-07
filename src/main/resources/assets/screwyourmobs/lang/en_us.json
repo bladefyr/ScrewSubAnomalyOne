@@ -1,0 +1,85 @@
+{
+  "_meta.translators": "vinntekk",
+  "_meta.language": "English (US)",
+  "_meta.notes": "Color codes (§) must be preserved for formatting.",
+
+  "_comment": "Config translation keys",
+
+  "screwyourmobs.configuration.title": "§6ScrewYourMobs!§r Configuration",
+  "screwyourmobs.configuration.section.sym.screwyourmobs.common.toml": "§6ScrewYourMobs!",
+  "screwyourmobs.configuration.section.sym.screwyourmobs.common.toml.title": "§6ScrewYourMobs! Configuration",
+
+  "screwyourmobs.configuration.general": "§6General",
+  "screwyourmobs.configuration.general.tooltip": "§7Entities, keep-lists, and misc settings.",
+  "screwyourmobs.configuration.general.button": "§6Edit...",
+
+  "screwyourmobs.configuration.rules": "§bRules",
+  "screwyourmobs.configuration.rules.tooltip": "§7Rule loading and validation behavior.",
+  "screwyourmobs.configuration.rules.button": "§bEdit...",
+
+  "screwyourmobs.configuration.debug": "§dDebug",
+  "screwyourmobs.configuration.debug.tooltip": "§7Debug output controls.\n§7The master switch must be true for ANY\n§7of the channels below to fire.",
+  "screwyourmobs.configuration.debug.button": "§dEdit...",
+
+  "screwyourmobs.config.general.entitiesToKeep": "§eEntities to Keep",
+  "screwyourmobs.config.general.entitiesToKeep.tooltip": "§7Entities that will §cNEVER§7 be removed,\n§7even if a rule matches them.\n\n§7Comma-separated entity IDs.\n§7Example: §fminecraft:wither, minecraft:ender_dragon",
+
+  "screwyourmobs.config.rules.validateOnLoad": "§bValidate Rules on Load",
+  "screwyourmobs.config.rules.validateOnLoad.tooltip": "§7Check rule entity/dimension IDs against\n§7the registry on load.\n\n§7Warnings appear through the debug channels.",
+
+  "screwyourmobs.config.debug.enabled": "§dEnable Debug Output",
+  "screwyourmobs.config.debug.enabled.tooltip": "§7Master switch.\n§7When false, all debug output is silenced.",
+
+  "screwyourmobs.config.debug.validateRules": "§dValidate Channel",
+  "screwyourmobs.config.debug.validateRules.tooltip": "§7Warn when a rule references an\n§7unknown entity or dimension.",
+
+  "screwyourmobs.config.debug.logRemovals": "§dRemovals Channel",
+  "screwyourmobs.config.debug.logRemovals.tooltip": "§7Log every entity removal.\n§cThis one gets really messy.",
+
+  "screwyourmobs.config.debug.logRuleErrors": "§dRule Errors Channel",
+  "screwyourmobs.config.debug.logRuleErrors.tooltip": "§7Log rule files that fail to parse\n§7or are skipped.",
+
+  "screwyourmobs.config.debug.logReloads": "§dReloads Channel",
+  "screwyourmobs.config.debug.logReloads.tooltip": "§7Log each rule reload with counts.",
+
+  "screwyourmobs.config.debug.outputConsole": "§dOutput to Console",
+  "screwyourmobs.config.debug.outputConsole.tooltip": "§7Send debug output to the server/client log.",
+
+  "screwyourmobs.config.debug.outputChat": "§dOutput to Chat",
+  "screwyourmobs.config.debug.outputChat.tooltip": "§7Send debug output to chat\n§7when triggered by a command.",
+
+  "screwyourmobs.config.debug.outputFile": "§dOutput to Debug File",
+  "screwyourmobs.config.debug.outputFile.tooltip": "§7Append debug output to §fconfig/sym/debug.log\n§7with timestamps.",
+
+  "_comment2": "Command translation keys",
+
+  "screwyourmobs.command.reload.success": "§aReloaded §f%s §arules, purged §f%s §aentities, §f%s §avalidation warning(s).",
+  "screwyourmobs.command.reload.prefix": "ScrewYourMobs!",
+
+  "screwyourmobs.command.list.empty": "§eNo rules loaded.",
+  "screwyourmobs.command.list.header": "§6Loaded rules:",
+  "screwyourmobs.command.list.entry": "§7- §f%s §7[§a%s entities§7] §7dims: §b%s",
+  "screwyourmobs.command.list.dims.all": "§aALL",
+
+  "screwyourmobs.command.stats.summary": "§6Rules: §a%s §f| §6Entity entries: §a%s §f| §6Warnings: §e%s",
+
+  "screwyourmobs.command.validate.none": "§aNo validation warnings.",
+  "screwyourmobs.command.validate.header": "§6%s warning(s):",
+  "screwyourmobs.command.validate.entry": "§7- §e%s",
+
+  "screwyourmobs.command.purge.success": "§aPurged §f%s §aexisting entities.",
+
+  "screwyourmobs.command.debug.status": "§6Debug: %s §7| §dmaster§7=%s §dvalidate§7=%s §dremovals§7=%s §druleErrors§7=%s §dreloads§7=%s §7| §dconsole§7=%s §dchat§7=%s §dfile§7=%s",
+  "screwyourmobs.command.debug.file": "§7Debug file: §f%s",
+  "screwyourmobs.command.debug.master": "§dDebug master switch: %s",
+  "screwyourmobs.command.debug.channel.set": "§a%s §7= §f%s",
+  "screwyourmobs.command.debug.channel.unknown": "§cUnknown debug channel: §f%s",
+  "screwyourmobs.command.debug.on": "§aON",
+  "screwyourmobs.command.debug.off": "§cOFF",
+
+  "_comment3": "Chat prefix tags",
+
+  "screwyourmobs.prefix.success": "[ScrewYourMobs!]",
+  "screwyourmobs.prefix.warn": "[ScrewYourMobs!]",
+  "screwyourmobs.prefix.error": "[ScrewYourMobs!]"
+}

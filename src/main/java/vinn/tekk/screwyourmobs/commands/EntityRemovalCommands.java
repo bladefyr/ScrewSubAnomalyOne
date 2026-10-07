@@ -34,6 +34,29 @@ public class EntityRemovalCommands {
         return prefix().copy().append(body);
     }
 
+    private static final Map<String, java.util.function.Consumer<Boolean>> DEBUG_CHANNEL_SETTERS = Map.ofEntries(
+            Map.entry("debugMaster", EntityRemovalConfig.DEBUG_ENABLED::set),
+            Map.entry("validateRules", EntityRemovalConfig.DEBUG_VALIDATE::set),
+            Map.entry("logRemovals", EntityRemovalConfig.DEBUG_REMOVALS::set),
+            Map.entry("logRuleErrors", EntityRemovalConfig.DEBUG_RULE_ERRORS::set),
+            Map.entry("logReloads", EntityRemovalConfig.DEBUG_RELOADS::set),
+            Map.entry("outputConsole", EntityRemovalConfig.DEBUG_TO_CONSOLE::set),
+            Map.entry("outputChat", EntityRemovalConfig.DEBUG_TO_CHAT::set),
+            Map.entry("outputFile", EntityRemovalConfig.DEBUG_TO_FILE::set)
+    );
+
+    private static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions>
+    suggestChannels(CommandContext<CommandSourceStack> ctx,
+                    com.mojang.brigadier.suggestion.SuggestionsBuilder builder) {
+        String remaining = builder.getRemaining().toLowerCase();
+        for (String channel : DEBUG_CHANNEL_SETTERS.keySet()) {
+            if (channel.toLowerCase().startsWith(remaining)) {
+                builder.suggest(channel);
+            }
+        }
+        return builder.buildFuture();
+    }
+
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
@@ -48,9 +71,8 @@ public class EntityRemovalCommands {
                         .then(Commands.literal("purge").executes(EntityRemovalCommands::purge))
                         .then(Commands.literal("debug")
                                 .executes(EntityRemovalCommands::debugStatus)
-                                .then(Commands.literal("on").executes(ctx -> setDebug(ctx, true)))
-                                .then(Commands.literal("off").executes(ctx -> setDebug(ctx, false)))
                                 .then(Commands.argument("channel", StringArgumentType.word())
+                                        .suggests(EntityRemovalCommands::suggestChannels)
                                         .then(Commands.argument("value", BoolArgumentType.bool())
                                                 .executes(EntityRemovalCommands::setDebugChannel))))
         );
@@ -98,10 +120,20 @@ public class EntityRemovalCommands {
                     .map(ResourceLocation::toString)
                     .reduce((a, b) -> a + ", " + b).orElse("");
 
+            int idCount = rule.entities().size();
+            int tagCount = rule.entityTags().size();
+
+            String countLabel = String.valueOf(idCount);
+            if (tagCount > 0) {
+                countLabel += " + " + tagCount + " tag" + (tagCount == 1 ? "" : "s");
+            }
+
+            final String finalCount = countLabel;
+
             ctx.getSource().sendSuccess(
                     () -> Component.literal("§7").append(Component.translatable(
                             "screwyourmobs.command.list.entry",
-                            rule.name(), rule.entities().size(), dims)),
+                            rule.name(), finalCount, dims)),
                     false);
         }
         return 1;
@@ -178,7 +210,7 @@ public class EntityRemovalCommands {
         return 1;
     }
 
-    private static int setDebug(CommandContext<CommandSourceStack> ctx, boolean value) {
+    private static int setDebugMaster(CommandContext<CommandSourceStack> ctx, boolean value) {
         EntityRemovalConfig.DEBUG_ENABLED.set(value);
         ctx.getSource().sendSuccess(
                 () -> prefixed(Component.translatable(
@@ -193,25 +225,20 @@ public class EntityRemovalCommands {
     private static int setDebugChannel(CommandContext<CommandSourceStack> ctx) {
         String channel = StringArgumentType.getString(ctx, "channel");
         boolean value = BoolArgumentType.getBool(ctx, "value");
-        boolean applied = true;
 
-        switch (channel.toLowerCase()) {
-            case "validaterules" -> EntityRemovalConfig.DEBUG_VALIDATE.set(value);
-            case "logremovals" -> EntityRemovalConfig.DEBUG_REMOVALS.set(value);
-            case "logruleerrors" -> EntityRemovalConfig.DEBUG_RULE_ERRORS.set(value);
-            case "logreloads" -> EntityRemovalConfig.DEBUG_RELOADS.set(value);
-            case "outputconsole" -> EntityRemovalConfig.DEBUG_TO_CONSOLE.set(value);
-            case "outputchat" -> EntityRemovalConfig.DEBUG_TO_CHAT.set(value);
-            case "outputfile" -> EntityRemovalConfig.DEBUG_TO_FILE.set(value);
-            default -> applied = false;
-        }
+        var setter = DEBUG_CHANNEL_SETTERS.entrySet().stream()
+                .filter(e -> e.getKey().equalsIgnoreCase(channel))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
 
-        if (!applied) {
+        if (setter == null) {
             ctx.getSource().sendFailure(prefixed(Component.translatable(
                     "screwyourmobs.command.debug.channel.unknown", channel)));
             return 0;
         }
 
+        setter.accept(value);
         ctx.getSource().sendSuccess(
                 () -> prefixed(Component.translatable(
                         "screwyourmobs.command.debug.channel.set", channel, value)),

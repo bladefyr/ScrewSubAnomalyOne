@@ -1,14 +1,23 @@
 package vinn.tekk.screwyourmobs.rules;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
 import vinn.tekk.screwyourmobs.debug.DebugLog;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class RuleManager {
 
@@ -17,6 +26,8 @@ public final class RuleManager {
     private static volatile Map<String, RemovalRule> RULES = Map.of();
     private static volatile Map<ResourceLocation, List<RemovalRule>> GLOBAL_INDEX = Map.of();
     private static volatile Map<ResourceLocation, Map<ResourceLocation, List<RemovalRule>>> DIMENSION_INDEX = Map.of();
+    private static volatile Map<TagKey<EntityType<?>>, List<RemovalRule>> GLOBAL_TAG_INDEX = Map.of();
+    private static volatile Map<ResourceLocation, Map<TagKey<EntityType<?>>, List<RemovalRule>>> DIMENSION_TAG_INDEX = Map.of();
     private static volatile List<String> LAST_WARNINGS = List.of();
     private static volatile int totalRules = 0;
     private static volatile int totalEntityEntries = 0;
@@ -46,14 +57,18 @@ public final class RuleManager {
             LAST_WARNINGS = List.of();
         }
 
-        // Build index
+        // --- Build indexes ---
         Map<ResourceLocation, List<RemovalRule>> global = new HashMap<>();
         Map<ResourceLocation, Map<ResourceLocation, List<RemovalRule>>> perDim = new HashMap<>();
+        Map<TagKey<EntityType<?>>, List<RemovalRule>> globalTags = new HashMap<>();
+        Map<ResourceLocation, Map<TagKey<EntityType<?>>, List<RemovalRule>>> perDimTags = new HashMap<>();
+
         int entityCount = 0;
 
         for (RemovalRule rule : loaded.values()) {
-            entityCount += rule.entities().size();
+            entityCount += rule.entities().size() + rule.entityTags().size();
 
+            // --- Entity ID indexing ---
             if (rule.isGlobal()) {
                 for (ResourceLocation entity : rule.entities()) {
                     global.computeIfAbsent(entity, k -> new ArrayList<>()).add(rule);
@@ -67,8 +82,24 @@ public final class RuleManager {
                     }
                 }
             }
+
+            // --- Tag indexing ---
+            if (rule.isGlobal()) {
+                for (TagKey<EntityType<?>> tag : rule.entityTags()) {
+                    globalTags.computeIfAbsent(tag, k -> new ArrayList<>()).add(rule);
+                }
+            } else {
+                for (ResourceLocation dim : rule.dimensions()) {
+                    Map<TagKey<EntityType<?>>, List<RemovalRule>> dimMap =
+                            perDimTags.computeIfAbsent(dim, k -> new HashMap<>());
+                    for (TagKey<EntityType<?>> tag : rule.entityTags()) {
+                        dimMap.computeIfAbsent(tag, k -> new ArrayList<>()).add(rule);
+                    }
+                }
+            }
         }
 
+        // --- Freeze for thread safety ---
         Map<ResourceLocation, List<RemovalRule>> frozenGlobal = new HashMap<>();
         global.forEach((k, v) -> frozenGlobal.put(k, List.copyOf(v)));
 
@@ -79,8 +110,21 @@ public final class RuleManager {
             frozenPerDim.put(dim, Collections.unmodifiableMap(inner));
         });
 
+        Map<TagKey<EntityType<?>>, List<RemovalRule>> frozenGlobalTags = new HashMap<>();
+        globalTags.forEach((k, v) -> frozenGlobalTags.put(k, List.copyOf(v)));
+
+        Map<ResourceLocation, Map<TagKey<EntityType<?>>, List<RemovalRule>>> frozenPerDimTags = new HashMap<>();
+        perDimTags.forEach((dim, tagMap) -> {
+            Map<TagKey<EntityType<?>>, List<RemovalRule>> inner = new HashMap<>();
+            tagMap.forEach((tag, list) -> inner.put(tag, List.copyOf(list)));
+            frozenPerDimTags.put(dim, Collections.unmodifiableMap(inner));
+        });
+
         GLOBAL_INDEX = Collections.unmodifiableMap(frozenGlobal);
         DIMENSION_INDEX = Collections.unmodifiableMap(frozenPerDim);
+        GLOBAL_TAG_INDEX = Collections.unmodifiableMap(frozenGlobalTags);
+        DIMENSION_TAG_INDEX = Collections.unmodifiableMap(frozenPerDimTags);
+
         totalRules = loaded.size();
         totalEntityEntries = entityCount;
 
@@ -89,17 +133,37 @@ public final class RuleManager {
                 totalRules, totalEntityEntries, LAST_WARNINGS.size());
     }
 
-    public static RemovalRule findMatch(ResourceLocation entityId, ResourceLocation dimensionId) {
+    public static RemovalRule findMatch(ResourceLocation entityId, ResourceLocation dimensionId,
+                                        EntityType<?> entityType) {
+        // 1. Global entity ID match
         List<RemovalRule> globalMatches = GLOBAL_INDEX.get(entityId);
         if (globalMatches != null && !globalMatches.isEmpty()) {
-            return globalMatches.get(0);
+            return globalMatches.getFirst();
         }
 
+        // 2. Global tag match
+        for (Map.Entry<TagKey<EntityType<?>>, List<RemovalRule>> entry : GLOBAL_TAG_INDEX.entrySet()) {
+            if (BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(entityType).is(entry.getKey())) {
+                return entry.getValue().getFirst();
+            }
+        }
+
+        // 3. Dimension-specific entity ID match
         Map<ResourceLocation, List<RemovalRule>> dimMap = DIMENSION_INDEX.get(dimensionId);
         if (dimMap != null) {
             List<RemovalRule> dimMatches = dimMap.get(entityId);
             if (dimMatches != null && !dimMatches.isEmpty()) {
-                return dimMatches.get(0);
+                return dimMatches.getFirst();
+            }
+        }
+
+        // 4. Dimension-specific tag match
+        Map<TagKey<EntityType<?>>, List<RemovalRule>> dimTagMap = DIMENSION_TAG_INDEX.get(dimensionId);
+        if (dimTagMap != null) {
+            for (Map.Entry<TagKey<EntityType<?>>, List<RemovalRule>> entry : dimTagMap.entrySet()) {
+                if (BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(entityType).is(entry.getKey())) {
+                    return entry.getValue().getFirst();
+                }
             }
         }
 

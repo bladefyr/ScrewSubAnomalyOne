@@ -9,7 +9,7 @@ displayName="ScrewYourMobs!"
 displayURL="https://modrinth.com/user/vinntekk"
 logoFile="logo.png"
 authors="vinntekk"
-description="Tired of SubAnomalyOne? This mod literally discards him! Now supports listing other entities/mobs via config!"
+description="General-purpose entity removal for NeoForge. Write simple JSON rules to remove mobs by ID or tag, per-dimension, with global and per-world rule sets. Includes granular debug channels and typo detection!"
 
 # Start of user code block mod configuration
 # End of user code block mod configuration
