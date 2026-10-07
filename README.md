@@ -1,2 +1,3 @@
-# ScrewSubAnomalyOne
-Codebase for the Minecraft Mod "ScrewSubAnomalyOne". Link: https://modrinth.com/mod/screwsubanomalyone
+# ScrewYourMobs
+
+Codebase for the Minecraft Mod "ScrewYourMobs". Link: https://modrinth.com/mod/screwyourmobs
