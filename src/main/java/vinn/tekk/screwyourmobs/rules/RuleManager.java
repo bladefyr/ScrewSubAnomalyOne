@@ -1,8 +1,12 @@
 package vinn.tekk.screwyourmobs.rules;
 
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
+import vinn.tekk.screwyourmobs.debug.DebugLog;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
@@ -10,47 +14,50 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Holds all loaded rules and a precomputed lookup index.
- *
- * Index structure:
- *   GLOBAL_INDEX: entityId -> rules that apply in all dimensions
- *   DIMENSION_INDEX: dimensionId -> (entityId -> rules that apply in that dimension)
- *
- * Spawn check is O(1) hashmap lookup in the worst case.
- */
 public final class RuleManager {
 
     private RuleManager() {}
 
     private static volatile Map<String, RemovalRule> RULES = Map.of();
-
-    // Precomputed lookup tables
     private static volatile Map<ResourceLocation, List<RemovalRule>> GLOBAL_INDEX = Map.of();
     private static volatile Map<ResourceLocation, Map<ResourceLocation, List<RemovalRule>>> DIMENSION_INDEX = Map.of();
-
-    // Diagnostics
+    private static volatile List<String> LAST_WARNINGS = List.of();
     private static volatile int totalRules = 0;
     private static volatile int totalEntityEntries = 0;
 
     public static void reload() {
         Path worldRulesDir = null;
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        Set<ResourceLocation> knownDimensions = new HashSet<>();
+
         if (server != null) {
             worldRulesDir = server.getWorldPath(LevelResource.ROOT)
                     .resolve(RuleLoader.WORLD_RULES_FOLDER);
+
+            server.levelKeys().forEach(key -> knownDimensions.add(key.location()));
         }
 
         Map<String, RemovalRule> loaded = RuleLoader.loadAll(worldRulesDir);
         RULES = Collections.unmodifiableMap(loaded);
 
+        // Validate against registries
+        if (server != null) {
+            LAST_WARNINGS = RuleValidator.validate(loaded, knownDimensions);
+            for (String warning : LAST_WARNINGS) {
+                DebugLog.log(DebugLog.Channel.VALIDATE, "%s", warning);
+            }
+        } else {
+            LAST_WARNINGS = List.of();
+        }
+
+        // Build index
         Map<ResourceLocation, List<RemovalRule>> global = new HashMap<>();
         Map<ResourceLocation, Map<ResourceLocation, List<RemovalRule>>> perDim = new HashMap<>();
-
         int entityCount = 0;
 
         for (RemovalRule rule : loaded.values()) {
@@ -71,7 +78,6 @@ public final class RuleManager {
             }
         }
 
-        // Freeze for thread safety
         Map<ResourceLocation, List<RemovalRule>> frozenGlobal = new HashMap<>();
         global.forEach((k, v) -> frozenGlobal.put(k, List.copyOf(v)));
 
@@ -87,22 +93,17 @@ public final class RuleManager {
         totalRules = loaded.size();
         totalEntityEntries = entityCount;
 
-        ScrewYourMobsMod.LOGGER.info(
-                "[ScrewYourMobs!] Loaded {} rules covering {} entity entries.",
-                totalRules, totalEntityEntries);
+        DebugLog.log(DebugLog.Channel.RELOAD,
+                "Loaded %d rules covering %d entity entries (%d warnings).",
+                totalRules, totalEntityEntries, LAST_WARNINGS.size());
     }
 
-    /**
-     * @return the matching rule if the entity should be removed, or null otherwise.
-     */
     public static RemovalRule findMatch(ResourceLocation entityId, ResourceLocation dimensionId) {
-        // 1. Global rules
         List<RemovalRule> globalMatches = GLOBAL_INDEX.get(entityId);
         if (globalMatches != null && !globalMatches.isEmpty()) {
             return globalMatches.get(0);
         }
 
-        // 2. Dimension-specific
         Map<ResourceLocation, List<RemovalRule>> dimMap = DIMENSION_INDEX.get(dimensionId);
         if (dimMap != null) {
             List<RemovalRule> dimMatches = dimMap.get(entityId);
@@ -114,27 +115,11 @@ public final class RuleManager {
         return null;
     }
 
-    public static boolean hasAnyRules() {
-        return totalRules > 0;
-    }
-
-    public static int getTotalRules() {
-        return totalRules;
-    }
-
-    public static int getTotalEntityEntries() {
-        return totalEntityEntries;
-    }
-
-    public static Set<String> getRuleNames() {
-        return RULES.keySet();
-    }
-
-    public static RemovalRule getRule(String name) {
-        return RULES.get(name);
-    }
-
-    public static Map<String, RemovalRule> getAllRules() {
-        return RULES;
-    }
+    public static boolean hasAnyRules() { return totalRules > 0; }
+    public static int getTotalRules() { return totalRules; }
+    public static int getTotalEntityEntries() { return totalEntityEntries; }
+    public static Set<String> getRuleNames() { return RULES.keySet(); }
+    public static RemovalRule getRule(String name) { return RULES.get(name); }
+    public static Map<String, RemovalRule> getAllRules() { return RULES; }
+    public static List<String> getLastWarnings() { return LAST_WARNINGS; }
 }

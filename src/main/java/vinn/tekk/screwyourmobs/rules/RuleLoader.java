@@ -1,6 +1,7 @@
 package vinn.tekk.screwyourmobs.rules;
 
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
+import vinn.tekk.screwyourmobs.debug.DebugLog;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -26,11 +27,14 @@ public final class RuleLoader {
     public static final Path GLOBAL_RULES_DIR =
             FMLPaths.CONFIGDIR.get().resolve("sym").resolve("rules");
 
-    /** World-relative path — do NOT resolve until a server exists. */
     public static final String WORLD_RULES_FOLDER = "serverconfig/sym_rules";
+    private static final String SEED_MARKER = ".s1_seeded";
 
-    private static final String EXAMPLE_FILE = "_example.json";
-    private static final String EXAMPLE_CONTENT = """
+    private record DefaultFile(String name, String content, boolean seedOnce) {}
+
+    private static final DefaultFile EXAMPLE = new DefaultFile(
+            "_example.json",
+            """
             {
               "_comment": "Copy this file and rename it. Delete the _comment field.",
               "_comment2": "Empty 'dimensions' list means the rule applies in ALL dimensions.",
@@ -43,27 +47,34 @@ public final class RuleLoader {
                 "minecraft:overworld"
               ]
             }
-            """;
+            """,
+            false);
 
-    /**
-     * Reads every *.json file from both the global rules directory and (if provided) the
-     * per-world rules directory. World rules override global rules with the same name.
-     *
-     * @param worldRulesDir the per-world rules directory, or {@code null} if no server is running.
-     * @return a merged map of ruleName -> RemovalRule.
-     */
+    private static final DefaultFile EASTER_EGG = new DefaultFile(
+            "_Screw_SubanomalyOne.json",
+            """
+            {
+              "_comment": "in memory of Screw_SubAnomalyOne (2025-2026)",
+              "_comment2": "rename this file to remove the underscore if you want him gone for good.",
+              "entities": [
+                "thebrokenscript:sub_anomaly_1"
+              ],
+              "dimensions": []
+            }
+            """,
+            true);  // seed once ever
+
+    private static final DefaultFile[] DEFAULT_FILES = { EXAMPLE, EASTER_EGG };
+
     public static Map<String, RemovalRule> loadAll(Path worldRulesDir) {
         Map<String, RemovalRule> result = new HashMap<>();
 
-        // Global rules (always)
         ensureDirectoryExists(GLOBAL_RULES_DIR);
-        writeExampleIfMissing(GLOBAL_RULES_DIR);
+        writeDefaultsIfMissing(GLOBAL_RULES_DIR);
         result.putAll(readDirectory(GLOBAL_RULES_DIR, "global"));
 
-        // World rules (only if server is up)
         if (worldRulesDir != null) {
             ensureDirectoryExists(worldRulesDir);
-            // No example written here — global example is the single teaching file.
             result.putAll(readDirectory(worldRulesDir, "world"));
         }
 
@@ -78,19 +89,20 @@ public final class RuleLoader {
                     .forEach(path -> {
                         String fileName = path.getFileName().toString();
                         String ruleName = fileName.substring(0, fileName.length() - 5);
-                        if (ruleName.startsWith("_")) return; // skip template/disabled files
+                        if (ruleName.startsWith("_")) return;
+
                         try {
                             RemovalRule rule = parseRule(ruleName, path);
                             if (rule != null) out.put(ruleName, rule);
                         } catch (Exception e) {
-                            ScrewYourMobsMod.LOGGER.error(
-                                    "[ScrewYourMobs!] Failed to parse {} rule '{}': {}",
+                            DebugLog.log(DebugLog.Channel.RULE_ERROR,
+                                    "Failed to parse %s rule '%s': %s",
                                     source, fileName, e.getMessage());
                         }
                     });
         } catch (IOException e) {
-            ScrewYourMobsMod.LOGGER.error(
-                    "[ScrewYourMobs!] Failed to list {} rules dir: {}", source, e.getMessage());
+            DebugLog.log(DebugLog.Channel.RULE_ERROR,
+                    "Failed to list %s rules dir: %s", source, e.getMessage());
         }
         return out;
     }
@@ -99,8 +111,8 @@ public final class RuleLoader {
         try (Reader reader = Files.newBufferedReader(path)) {
             JsonElement root = JsonParser.parseReader(reader);
             if (!root.isJsonObject()) {
-                ScrewYourMobsMod.LOGGER.warn(
-                        "[ScrewYourMobs!] Rule '{}' is not a JSON object — skipped.", name);
+                DebugLog.log(DebugLog.Channel.RULE_ERROR,
+                        "Rule '%s' is not a JSON object - skipped.", name);
                 return null;
             }
 
@@ -109,8 +121,8 @@ public final class RuleLoader {
             Set<ResourceLocation> dimensions = parseIdSet(obj.getAsJsonArray("dimensions"), name, "dimensions");
 
             if (entities.isEmpty()) {
-                ScrewYourMobsMod.LOGGER.warn(
-                        "[ScrewYourMobs!] Rule '{}' has no entities — skipped.", name);
+                DebugLog.log(DebugLog.Channel.RULE_ERROR,
+                        "Rule '%s' has no entities - skipped.", name);
                 return null;
             }
 
@@ -124,8 +136,8 @@ public final class RuleLoader {
 
         for (JsonElement el : array) {
             if (!el.isJsonPrimitive() || !el.getAsJsonPrimitive().isString()) {
-                ScrewYourMobsMod.LOGGER.warn(
-                        "[ScrewYourMobs!] Rule '{}' field '{}' has non-string entry — skipped.",
+                DebugLog.log(DebugLog.Channel.RULE_ERROR,
+                        "Rule '%s' field '%s' has non-string entry - skipped.",
                         ruleName, field);
                 continue;
             }
@@ -134,8 +146,8 @@ public final class RuleLoader {
 
             ResourceLocation rl = ResourceLocation.tryParse(raw);
             if (rl == null) {
-                ScrewYourMobsMod.LOGGER.warn(
-                        "[ScrewYourMobs!] Rule '{}' field '{}' has invalid ID '{}' — skipped.",
+                DebugLog.log(DebugLog.Channel.RULE_ERROR,
+                        "Rule '%s' field '%s' has invalid ID '%s' - skipped.",
                         ruleName, field, raw);
                 continue;
             }
@@ -149,8 +161,8 @@ public final class RuleLoader {
         try {
             if (!Files.exists(dir)) {
                 Files.createDirectories(dir);
-                ScrewYourMobsMod.LOGGER.info(
-                        "[ScrewYourMobs!] Created rules directory: {}", dir);
+                DebugLog.log(DebugLog.Channel.RELOAD,
+                        "Created rules directory: %s", dir);
             }
         } catch (IOException e) {
             ScrewYourMobsMod.LOGGER.error(
@@ -159,18 +171,37 @@ public final class RuleLoader {
         }
     }
 
-    private static void writeExampleIfMissing(Path dir) {
+    private static void writeDefaultsIfMissing(Path dir) {
         if (dir == null) return;
-        Path example = dir.resolve(EXAMPLE_FILE);
-        if (Files.exists(example)) return;
-        try (Writer w = Files.newBufferedWriter(example)) {
-            w.write(EXAMPLE_CONTENT);
-            ScrewYourMobsMod.LOGGER.info(
-                    "[ScrewYourMobs!] Wrote example rule file: {}", example);
-        } catch (IOException e) {
-            ScrewYourMobsMod.LOGGER.error(
-                    "[ScrewYourMobs!] Could not write example file '{}': {}",
-                    example, e.getMessage());
+
+        for (DefaultFile file : DEFAULT_FILES) {
+            Path target = dir.resolve(file.name());
+
+            if (file.seedOnce()) {
+                Path marker = dir.resolve(SEED_MARKER);
+                if (Files.exists(marker)) continue;
+                if (Files.exists(target)) continue;
+            } else {
+                if (Files.exists(target)) continue;
+            }
+
+            try (Writer w = Files.newBufferedWriter(target)) {
+                w.write(file.content());
+                DebugLog.log(DebugLog.Channel.RELOAD,
+                        "Wrote default file: %s", target);
+
+                if (file.seedOnce()) {
+                    Path marker = dir.resolve(SEED_MARKER);
+                    try (Writer m = Files.newBufferedWriter(marker)) {
+                        m.write("This folder has already been seeded with the easter egg.\n");
+                        m.write("Delete this file if you want it back on next launch.\n");
+                    }
+                }
+            } catch (IOException e) {
+                ScrewYourMobsMod.LOGGER.error(
+                        "[ScrewYourMobs!] Could not write default file '{}': {}",
+                        target, e.getMessage());
+            }
         }
     }
 }

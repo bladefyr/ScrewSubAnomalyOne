@@ -2,6 +2,7 @@ package vinn.tekk.screwyourmobs.procedures;
 
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
 import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
+import vinn.tekk.screwyourmobs.debug.DebugLog;
 import vinn.tekk.screwyourmobs.rules.RemovalRule;
 import vinn.tekk.screwyourmobs.rules.RuleManager;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -61,11 +62,9 @@ public class EntityRemovalHandler {
         RemovalRule match = RuleManager.findMatch(typeId, dimId);
         if (match == null) return;
 
-        if (EntityRemovalConfig.ENABLE_LOGGING.get()) {
-            String formatted = String.format(
-                    EntityRemovalConfig.LOG_MESSAGE.get(),
-                    typeId + " (rule: " + match.name() + ")");
-            ScrewYourMobsMod.LOGGER.info(formatted);
+        if (EntityRemovalConfig.DEBUG_ENABLED.get()) {
+            DebugLog.log(DebugLog.Channel.REMOVAL,
+                    "Removed: %s (rule: %s)", typeId, match.name());
         }
         event.setCanceled(true);
     }
