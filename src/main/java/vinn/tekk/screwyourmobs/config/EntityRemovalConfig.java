@@ -10,13 +10,13 @@ public class EntityRemovalConfig {
 
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    // --- [general] ---
+    // --- General ---
     public static final ModConfigSpec.ConfigValue<String> ENTITIES_TO_KEEP;
 
-    // --- [rules] ---
+    // --- Rules ---
     public static final ModConfigSpec.BooleanValue RULES_VALIDATE_ON_LOAD;
 
-    // --- [debug] ---
+    // --- Debug ---
     public static final ModConfigSpec.BooleanValue DEBUG_ENABLED;
     public static final ModConfigSpec.BooleanValue DEBUG_VALIDATE;
     public static final ModConfigSpec.BooleanValue DEBUG_REMOVALS;

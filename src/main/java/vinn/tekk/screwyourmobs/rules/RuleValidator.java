@@ -16,16 +16,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Validates a loaded rule set against live registries. Produces human-readable
- * warnings for unknown entities, dimensions, and tags, plus "did you mean ...?"
- * suggestions when a close match exists.
- */
 public final class RuleValidator {
 
     private RuleValidator() {}
 
-    /** Max edit distance to still suggest a candidate. */
+    // Max edit distance to still suggest a candidate
     private static final int SUGGESTION_MAX_DISTANCE = 4;
 
     public static List<String> validate(Map<String, RemovalRule> rules,

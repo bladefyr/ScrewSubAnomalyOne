@@ -53,7 +53,7 @@
 
   "_comment2": "Command translation keys",
 
-  "screwyourmobs.command.reload.success": "§aReloaded §f%s §arules, purged §f%s §aentities, §f%s §avalidation warning(s).",
+  "screwyourmobs.command.reload.success": "§aReloaded §f%s §arule(s), purged §f%s §aentities, §f%s §avalidation warning(s).",
   "screwyourmobs.command.reload.prefix": "ScrewYourMobs!",
 
   "screwyourmobs.command.list.empty": "§eNo rules loaded.",

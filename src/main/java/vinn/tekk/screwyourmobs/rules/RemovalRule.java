@@ -6,11 +6,6 @@ import net.minecraft.world.entity.EntityType;
 
 import java.util.Set;
 
-/**
- * A single additive removal rule.
- * If any entity in {@code entities} spawns in any dimension in {@code dimensions},
- * it is removed. Empty {@code dimensions} means "all dimensions".
- */
 public record RemovalRule(
         String name,
         Set<ResourceLocation> entities,

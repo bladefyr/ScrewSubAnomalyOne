@@ -14,10 +14,6 @@ import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Centralized debug output. All debug logging goes through here so that
- * adding/removing channels doesn't require touching call sites.
- */
 public final class DebugLog {
 
     private DebugLog() {}
@@ -64,10 +60,6 @@ public final class DebugLog {
                 false);
     }
 
-    /**
-     * Chat-only path — used by commands. Falls back to console when the source
-     * has no player attached (e.g. server console).
-     */
     public static void logToSource(CommandSourceStack source, Channel channel,
                                    String message, Object... args) {
         if (!EntityRemovalConfig.DEBUG_ENABLED.get()) return;

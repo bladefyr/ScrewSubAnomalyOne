@@ -55,7 +55,6 @@ public class EntityRemovalHandler {
         ResourceLocation typeId = BuiltInRegistries.ENTITY_TYPE.getKey(type);
         if (typeId == null) return;
 
-        // Keep-list overrides everything
         if (KEEP_IDS.contains(typeId)) return;
 
         ResourceLocation dimId = level.dimension().location();

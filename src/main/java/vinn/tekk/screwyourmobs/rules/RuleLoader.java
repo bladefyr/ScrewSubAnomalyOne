@@ -39,7 +39,7 @@ public final class RuleLoader {
             "_example.json",
             """
             {
-              "_comment": "Copy this file and rename it. Delete the _comment field.",
+              "_comment": "Copy this file and rename it. Delete the _comment fields if you want to.",
               "_comment2": "Empty 'dimensions' list means the rule applies in ALL dimensions.",
               "_comment3": "Tags like '#minecraft:raiders' are also supported.",
               "entities": [
@@ -66,7 +66,7 @@ public final class RuleLoader {
               "dimensions": []
             }
             """,
-            true);  // seed once ever
+            true);
 
     private static final DefaultFile[] DEFAULT_FILES = { EXAMPLE, EASTER_EGG };
 
@@ -122,7 +122,6 @@ public final class RuleLoader {
 
             JsonObject obj = root.getAsJsonObject();
 
-            // Split entity entries into IDs and tags
             Set<ResourceLocation> entities = new HashSet<>();
             Set<TagKey<EntityType<?>>> entityTags = new HashSet<>();
             parseEntityEntries(obj.getAsJsonArray("entities"), name, entities, entityTags);
@@ -154,7 +153,7 @@ public final class RuleLoader {
             if (raw.isEmpty()) continue;
 
             if (raw.startsWith("#")) {
-                String tagId = raw.substring(1); // strip #
+                String tagId = raw.substring(1);
                 ResourceLocation rl = ResourceLocation.tryParse(tagId);
                 if (rl == null) {
                     DebugLog.log(DebugLog.Channel.RULE_ERROR,
