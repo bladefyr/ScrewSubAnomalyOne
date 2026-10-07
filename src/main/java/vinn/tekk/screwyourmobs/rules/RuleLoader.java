@@ -1,13 +1,13 @@
 package vinn.tekk.screwyourmobs.rules;
 
-import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
-import vinn.tekk.screwyourmobs.debug.DebugLog;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.loading.FMLPaths;
+import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
+import vinn.tekk.screwyourmobs.debug.DebugLog;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -38,10 +38,11 @@ public final class RuleLoader {
             {
               "_comment": "Copy this file and rename it. Delete the _comment field.",
               "_comment2": "Empty 'dimensions' list means the rule applies in ALL dimensions.",
+              "_comment3": "Tags like '#minecraft:raiders' are also supported.",
               "entities": [
                 "minecraft:creeper",
                 "minecraft:skeleton",
-                "minecraft:zombie"
+                "#minecraft:raiders"
               ],
               "dimensions": [
                 "minecraft:overworld"

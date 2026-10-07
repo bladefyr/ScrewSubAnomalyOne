@@ -1,6 +1,51 @@
 {
-  "screw_subanomalyone.configuration.entityRemovalSettings": "Entity Removal Settings",
-  "screwsubanomalyone.config.entitiesToRemove": "Entities to Remove",
-  "screwsubanomalyone.config.enableLogging": "Enable Logging",
-  "screwsubanomalyone.config.logMessage": "Log Message"
+  "_comment": "Config translation keys",
+
+  "screwyourmobs.configuration.title": "§6ScrewYourMobs!§r Configuration",
+  "screwyourmobs.configuration.section.general": "§6General",
+  "screwyourmobs.configuration.section.rules": "§bRules",
+  "screwyourmobs.configuration.section.debug": "§dDebug",
+
+  "screwyourmobs.config.general.entitiesToKeep": "§eEntities to Keep",
+  "screwyourmobs.config.rules.validateOnLoad": "§bValidate Rules on Load",
+  "screwyourmobs.config.debug.enabled": "§dEnable Debug Output",
+  "screwyourmobs.config.debug.validateRules": "§dValidate Channel",
+  "screwyourmobs.config.debug.logRemovals": "§dRemovals Channel",
+  "screwyourmobs.config.debug.logRuleErrors": "§dRule Errors Channel",
+  "screwyourmobs.config.debug.logReloads": "§dReloads Channel",
+  "screwyourmobs.config.debug.outputConsole": "§dOutput to Console",
+  "screwyourmobs.config.debug.outputChat": "§dOutput to Chat",
+  "screwyourmobs.config.debug.outputFile": "§dOutput to Debug File",
+
+  "_comment2": "Command translation keys",
+
+  "screwyourmobs.command.reload.success": "§aReloaded §f%s §arules, purged §f%s §aentities, §f%s §avalidation warning(s).",
+  "screwyourmobs.command.reload.prefix": "ScrewYourMobs!",
+
+  "screwyourmobs.command.list.empty": "§eNo rules loaded.",
+  "screwyourmobs.command.list.header": "§6Loaded rules:",
+  "screwyourmobs.command.list.entry": "§7- §f%s §7[§a%s entities§7] §7dims: §b%s",
+  "screwyourmobs.command.list.dims.all": "§aALL",
+
+  "screwyourmobs.command.stats.summary": "§6Rules: §a%s §f| §6Entity entries: §a%s §f| §6Warnings: §e%s",
+
+  "screwyourmobs.command.validate.none": "§aNo validation warnings.",
+  "screwyourmobs.command.validate.header": "§6%s warning(s):",
+  "screwyourmobs.command.validate.entry": "§7- §e%s",
+
+  "screwyourmobs.command.purge.success": "§aPurged §f%s §aexisting entities.",
+
+  "screwyourmobs.command.debug.status": "§6Debug: %s §7| §dvalidate§7=%s §dremovals§7=%s §druleErrors§7=%s §dreloads§7=%s §7| §dconsole§7=%s §dchat§7=%s §dfile§7=%s",
+  "screwyourmobs.command.debug.file": "§7Debug file: §f%s",
+  "screwyourmobs.command.debug.master": "§dDebug master switch: %s",
+  "screwyourmobs.command.debug.channel.set": "§a%s §7= §f%s",
+  "screwyourmobs.command.debug.channel.unknown": "§cUnknown debug channel: §f%s",
+  "screwyourmobs.command.debug.on": "§aON",
+  "screwyourmobs.command.debug.off": "§cOFF",
+
+  "_comment3": "Chat prefix tags",
+
+  "screwyourmobs.prefix.success": "[ScrewYourMobs!]",
+  "screwyourmobs.prefix.warn": "[ScrewYourMobs!]",
+  "screwyourmobs.prefix.error": "[ScrewYourMobs!]"
 }

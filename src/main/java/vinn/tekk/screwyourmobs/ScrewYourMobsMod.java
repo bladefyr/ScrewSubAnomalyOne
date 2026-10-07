@@ -1,7 +1,5 @@
 package vinn.tekk.screwyourmobs;
 
-import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
-import vinn.tekk.screwyourmobs.procedures.EntityRemovalHandler;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -13,6 +11,8 @@ import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
+import vinn.tekk.screwyourmobs.procedures.EntityRemovalHandler;
 
 @Mod(ScrewYourMobsMod.MODID)
 public class ScrewYourMobsMod {

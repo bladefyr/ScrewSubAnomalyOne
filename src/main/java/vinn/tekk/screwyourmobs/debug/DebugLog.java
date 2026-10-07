@@ -1,10 +1,10 @@
 package vinn.tekk.screwyourmobs.debug;
 
-import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
-import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.loading.FMLPaths;
+import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
+import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -51,7 +51,8 @@ public final class DebugLog {
         }
     }
 
-    public static void chatOnly(CommandSourceStack source, Channel channel, String message, Object... args) {
+    public static void chatOnly(CommandSourceStack source, Channel channel,
+                                String message, Object... args) {
         if (!EntityRemovalConfig.DEBUG_ENABLED.get()) return;
         if (!isChannelEnabled(channel)) return;
         if (!EntityRemovalConfig.DEBUG_TO_CHAT.get()) return;

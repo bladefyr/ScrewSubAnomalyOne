@@ -1,11 +1,5 @@
 package vinn.tekk.screwyourmobs.commands;
 
-import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
-import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
-import vinn.tekk.screwyourmobs.debug.DebugLog;
-import vinn.tekk.screwyourmobs.procedures.EntityPurger;
-import vinn.tekk.screwyourmobs.rules.RemovalRule;
-import vinn.tekk.screwyourmobs.rules.RuleManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -17,12 +11,28 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
+import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
+import vinn.tekk.screwyourmobs.debug.DebugLog;
+import vinn.tekk.screwyourmobs.procedures.EntityPurger;
+import vinn.tekk.screwyourmobs.rules.RemovalRule;
+import vinn.tekk.screwyourmobs.rules.RuleManager;
 
 import java.util.List;
 import java.util.Map;
 
 @EventBusSubscriber(modid = ScrewYourMobsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class EntityRemovalCommands {
+
+    private static Component prefix() {
+        return Component.literal("§a").append(
+                        Component.translatable("screwyourmobs.prefix.success"))
+                .append(Component.literal(" §r"));
+    }
+
+    private static Component prefixed(Component body) {
+        return prefix().copy().append(body);
+    }
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -53,12 +63,11 @@ public class EntityRemovalCommands {
         int warnCount = RuleManager.getLastWarnings().size();
 
         ctx.getSource().sendSuccess(
-                () -> Component.literal("§a[ScrewYourMobs!] Reloaded " + ruleCount
-                        + " rules, purged " + purged + " entities, "
-                        + warnCount + " validation warning(s)."),
+                () -> prefixed(Component.translatable(
+                        "screwyourmobs.command.reload.success",
+                        ruleCount, purged, warnCount)),
                 true);
 
-        // Surface warnings in chat when debug chat is on
         if (!RuleManager.getLastWarnings().isEmpty()) {
             for (String w : RuleManager.getLastWarnings()) {
                 DebugLog.chatOnly(ctx.getSource(), DebugLog.Channel.VALIDATE, "%s", w);
@@ -71,23 +80,28 @@ public class EntityRemovalCommands {
         Map<String, RemovalRule> rules = RuleManager.getAllRules();
         if (rules.isEmpty()) {
             ctx.getSource().sendSuccess(
-                    () -> Component.literal("§e[ScrewYourMobs!] No rules loaded."), false);
+                    () -> prefixed(Component.translatable(
+                            "screwyourmobs.command.list.empty")),
+                    false);
             return 0;
         }
+
         ctx.getSource().sendSuccess(
-                () -> Component.literal("§6[ScrewYourMobs!] Loaded rules:"), false);
+                () -> prefixed(Component.translatable(
+                        "screwyourmobs.command.list.header")),
+                false);
 
         for (RemovalRule rule : rules.values()) {
             String dims = rule.isGlobal()
-                    ? "§aALL"
+                    ? "§a" + Component.translatable("screwyourmobs.command.list.dims.all").getString()
                     : rule.dimensions().stream()
                     .map(ResourceLocation::toString)
                     .reduce((a, b) -> a + ", " + b).orElse("");
 
             ctx.getSource().sendSuccess(
-                    () -> Component.literal(
-                            "§7- §f" + rule.name() + " §7[" + rule.entities().size()
-                                    + " entities] §7dims: " + dims),
+                    () -> Component.literal("§7").append(Component.translatable(
+                            "screwyourmobs.command.list.entry",
+                            rule.name(), rule.entities().size(), dims)),
                     false);
         }
         return 1;
@@ -95,12 +109,11 @@ public class EntityRemovalCommands {
 
     private static int stats(CommandContext<CommandSourceStack> ctx) {
         ctx.getSource().sendSuccess(
-                () -> Component.literal("§6[ScrewYourMobs!] §fRules: §a"
-                        + RuleManager.getTotalRules()
-                        + " §f| Entity entries: §a"
-                        + RuleManager.getTotalEntityEntries()
-                        + " §f| Warnings: §e"
-                        + RuleManager.getLastWarnings().size()),
+                () -> prefixed(Component.translatable(
+                        "screwyourmobs.command.stats.summary",
+                        RuleManager.getTotalRules(),
+                        RuleManager.getTotalEntityEntries(),
+                        RuleManager.getLastWarnings().size())),
                 false);
         return 1;
     }
@@ -109,16 +122,22 @@ public class EntityRemovalCommands {
         List<String> warnings = RuleManager.getLastWarnings();
         if (warnings.isEmpty()) {
             ctx.getSource().sendSuccess(
-                    () -> Component.literal("§a[ScrewYourMobs!] No validation warnings."),
+                    () -> prefixed(Component.translatable(
+                            "screwyourmobs.command.validate.none")),
                     false);
             return 1;
         }
+
         ctx.getSource().sendSuccess(
-                () -> Component.literal("§6[ScrewYourMobs!] " + warnings.size() + " warning(s):"),
+                () -> prefixed(Component.translatable(
+                        "screwyourmobs.command.validate.header", warnings.size())),
                 false);
+
         for (String w : warnings) {
             ctx.getSource().sendSuccess(
-                    () -> Component.literal("§7- §e" + w), false);
+                    () -> Component.literal("§7").append(Component.translatable(
+                            "screwyourmobs.command.validate.entry", w)),
+                    false);
         }
         return 1;
     }
@@ -126,26 +145,35 @@ public class EntityRemovalCommands {
     private static int purge(CommandContext<CommandSourceStack> ctx) {
         int purged = EntityPurger.purgeAll();
         ctx.getSource().sendSuccess(
-                () -> Component.literal("§a[ScrewYourMobs!] Purged " + purged
-                        + " existing entities."), true);
+                () -> prefixed(Component.translatable(
+                        "screwyourmobs.command.purge.success", purged)),
+                true);
         return 1;
     }
 
     private static int debugStatus(CommandContext<CommandSourceStack> ctx) {
         boolean enabled = EntityRemovalConfig.DEBUG_ENABLED.get();
+        Component onOff = Component.translatable(enabled
+                ? "screwyourmobs.command.debug.on"
+                : "screwyourmobs.command.debug.off");
+
         ctx.getSource().sendSuccess(
-                () -> Component.literal("§6[ScrewYourMobs!] Debug: "
-                        + (enabled ? "§aON" : "§cOFF")
-                        + " §7| validate=" + EntityRemovalConfig.DEBUG_VALIDATE.get()
-                        + " removals=" + EntityRemovalConfig.DEBUG_REMOVALS.get()
-                        + " ruleErrors=" + EntityRemovalConfig.DEBUG_RULE_ERRORS.get()
-                        + " reloads=" + EntityRemovalConfig.DEBUG_RELOADS.get()
-                        + " | console=" + EntityRemovalConfig.DEBUG_TO_CONSOLE.get()
-                        + " chat=" + EntityRemovalConfig.DEBUG_TO_CHAT.get()
-                        + " file=" + EntityRemovalConfig.DEBUG_TO_FILE.get()),
+                () -> prefixed(Component.translatable(
+                        "screwyourmobs.command.debug.status",
+                        onOff,
+                        EntityRemovalConfig.DEBUG_VALIDATE.get(),
+                        EntityRemovalConfig.DEBUG_REMOVALS.get(),
+                        EntityRemovalConfig.DEBUG_RULE_ERRORS.get(),
+                        EntityRemovalConfig.DEBUG_RELOADS.get(),
+                        EntityRemovalConfig.DEBUG_TO_CONSOLE.get(),
+                        EntityRemovalConfig.DEBUG_TO_CHAT.get(),
+                        EntityRemovalConfig.DEBUG_TO_FILE.get())),
                 false);
+
         ctx.getSource().sendSuccess(
-                () -> Component.literal("§7Debug file: " + DebugLog.getDebugFilePath()),
+                () -> Component.literal("§7").append(Component.translatable(
+                        "screwyourmobs.command.debug.file",
+                        DebugLog.getDebugFilePath().toString())),
                 false);
         return 1;
     }
@@ -153,8 +181,12 @@ public class EntityRemovalCommands {
     private static int setDebug(CommandContext<CommandSourceStack> ctx, boolean value) {
         EntityRemovalConfig.DEBUG_ENABLED.set(value);
         ctx.getSource().sendSuccess(
-                () -> Component.literal("§a[ScrewYourMobs!] Debug master switch: "
-                        + (value ? "§aON" : "§cOFF")), true);
+                () -> prefixed(Component.translatable(
+                        "screwyourmobs.command.debug.master",
+                        Component.translatable(value
+                                ? "screwyourmobs.command.debug.on"
+                                : "screwyourmobs.command.debug.off"))),
+                true);
         return 1;
     }
 
@@ -175,13 +207,14 @@ public class EntityRemovalCommands {
         }
 
         if (!applied) {
-            ctx.getSource().sendFailure(Component.literal(
-                    "§cUnknown debug channel: " + channel));
+            ctx.getSource().sendFailure(prefixed(Component.translatable(
+                    "screwyourmobs.command.debug.channel.unknown", channel)));
             return 0;
         }
 
         ctx.getSource().sendSuccess(
-                () -> Component.literal("§a[ScrewYourMobs!] " + channel + " = " + value),
+                () -> prefixed(Component.translatable(
+                        "screwyourmobs.command.debug.channel.set", channel, value)),
                 true);
         return 1;
     }

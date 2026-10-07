@@ -10,9 +10,13 @@ public class EntityRemovalConfig {
 
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
+    // --- [general] ---
     public static final ModConfigSpec.ConfigValue<String> ENTITIES_TO_KEEP;
 
-    // Debug section
+    // --- [rules] ---
+    public static final ModConfigSpec.BooleanValue RULES_VALIDATE_ON_LOAD;
+
+    // --- [debug] ---
     public static final ModConfigSpec.BooleanValue DEBUG_ENABLED;
     public static final ModConfigSpec.BooleanValue DEBUG_VALIDATE;
     public static final ModConfigSpec.BooleanValue DEBUG_REMOVALS;
@@ -23,15 +27,27 @@ public class EntityRemovalConfig {
     public static final ModConfigSpec.BooleanValue DEBUG_TO_FILE;
 
     static {
-        BUILDER.push("entityRemoval");
+        BUILDER.comment("General settings for entity removal.")
+                .push("general");
 
         ENTITIES_TO_KEEP = BUILDER
-                .comment("Entities that should NEVER be removed, even if they match an ID or tag above.",
+                .comment("Entities that will NEVER be removed, even if a rule matches them.",
                         "Comma-separated list of entity IDs (format: namespace:entity_id).",
-                        "Useful for exempting named bosses or specific variants, but really probably useless otherwise.",
+                        "Useful for exempting named bosses or specific variants.",
                         "Example: minecraft:wither, minecraft:ender_dragon")
-                .translation("entityremoval.config.entitiesToKeep")
+                .translation("screwyourmobs.config.general.entitiesToKeep")
                 .define("entitiesToKeep", "");
+
+        BUILDER.pop();
+
+        BUILDER.comment("Rule loading and validation.")
+                .push("rules");
+
+        RULES_VALIDATE_ON_LOAD = BUILDER
+                .comment("Check rule entity/dimension IDs against the registry on load.",
+                        "Warnings are shown through the debug channels below.")
+                .translation("screwyourmobs.config.rules.validateOnLoad")
+                .define("validateOnLoad", true);
 
         BUILDER.pop();
 
@@ -41,34 +57,42 @@ public class EntityRemovalConfig {
 
         DEBUG_ENABLED = BUILDER
                 .comment("Master switch. When false, all debug output is silenced.")
+                .translation("screwyourmobs.config.debug.enabled")
                 .define("enabled", false);
 
         DEBUG_VALIDATE = BUILDER
                 .comment("Warn when a rule references an unknown entity or dimension.")
+                .translation("screwyourmobs.config.debug.validateRules")
                 .define("validateRules", true);
 
         DEBUG_REMOVALS = BUILDER
                 .comment("Log every entity removal. Noisy on busy servers.")
+                .translation("screwyourmobs.config.debug.logRemovals")
                 .define("logRemovals", false);
 
         DEBUG_RULE_ERRORS = BUILDER
                 .comment("Log rule files that fail to parse or are skipped.")
+                .translation("screwyourmobs.config.debug.logRuleErrors")
                 .define("logRuleErrors", true);
 
         DEBUG_RELOADS = BUILDER
                 .comment("Log each rule reload with counts.")
+                .translation("screwyourmobs.config.debug.logReloads")
                 .define("logReloads", true);
 
         DEBUG_TO_CONSOLE = BUILDER
                 .comment("Send debug output to the server/client log.")
+                .translation("screwyourmobs.config.debug.outputConsole")
                 .define("outputConsole", true);
 
         DEBUG_TO_CHAT = BUILDER
                 .comment("Send debug output to chat when triggered by a command.")
+                .translation("screwyourmobs.config.debug.outputChat")
                 .define("outputChat", false);
 
         DEBUG_TO_FILE = BUILDER
                 .comment("Append debug output to config/sym/debug.log with timestamps.")
+                .translation("screwyourmobs.config.debug.outputFile")
                 .define("outputFile", false);
 
         BUILDER.pop();

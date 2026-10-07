@@ -2,7 +2,6 @@ package vinn.tekk.screwyourmobs.rules;
 
 import net.minecraft.resources.ResourceLocation;
 
-import java.util.List;
 import java.util.Set;
 
 /**

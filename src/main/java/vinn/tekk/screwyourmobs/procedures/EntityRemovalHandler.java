@@ -1,10 +1,5 @@
 package vinn.tekk.screwyourmobs.procedures;
 
-import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
-import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
-import vinn.tekk.screwyourmobs.debug.DebugLog;
-import vinn.tekk.screwyourmobs.rules.RemovalRule;
-import vinn.tekk.screwyourmobs.rules.RuleManager;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -13,6 +8,11 @@ import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
+import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
+import vinn.tekk.screwyourmobs.debug.DebugLog;
+import vinn.tekk.screwyourmobs.rules.RemovalRule;
+import vinn.tekk.screwyourmobs.rules.RuleManager;
 
 import java.util.HashSet;
 import java.util.Set;

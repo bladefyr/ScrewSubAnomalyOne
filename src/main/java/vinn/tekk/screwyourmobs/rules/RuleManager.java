@@ -1,23 +1,14 @@
 package vinn.tekk.screwyourmobs.rules;
 
-import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
-import vinn.tekk.screwyourmobs.debug.DebugLog;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
+import vinn.tekk.screwyourmobs.debug.DebugLog;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public final class RuleManager {
 
@@ -46,7 +37,7 @@ public final class RuleManager {
         RULES = Collections.unmodifiableMap(loaded);
 
         // Validate against registries
-        if (server != null) {
+        if (server != null && EntityRemovalConfig.RULES_VALIDATE_ON_LOAD.get()) {
             LAST_WARNINGS = RuleValidator.validate(loaded, knownDimensions);
             for (String warning : LAST_WARNINGS) {
                 DebugLog.log(DebugLog.Channel.VALIDATE, "%s", warning);

@@ -1,9 +1,5 @@
 package vinn.tekk.screwyourmobs.procedures;
 
-import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
-import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
-import vinn.tekk.screwyourmobs.debug.DebugLog;
-import vinn.tekk.screwyourmobs.rules.RuleManager;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -12,6 +8,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
+import vinn.tekk.screwyourmobs.debug.DebugLog;
+import vinn.tekk.screwyourmobs.rules.RuleManager;
 
 import java.util.ArrayList;
 import java.util.List;

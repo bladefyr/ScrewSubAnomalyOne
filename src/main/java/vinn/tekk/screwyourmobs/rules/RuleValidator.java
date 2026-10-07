@@ -1,17 +1,12 @@
 package vinn.tekk.screwyourmobs.rules;
 
-import net.neoforged.neoforgespi.language.IModInfo;
-import vinn.tekk.screwyourmobs.debug.DebugLog;
-import vinn.tekk.screwyourmobs.debug.Levenshtein;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforgespi.language.IModInfo;
+import vinn.tekk.screwyourmobs.debug.Levenshtein;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
