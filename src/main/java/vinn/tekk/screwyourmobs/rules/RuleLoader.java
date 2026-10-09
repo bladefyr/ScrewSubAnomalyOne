@@ -32,8 +32,10 @@ public final class RuleLoader {
 
     public static final String WORLD_RULES_FOLDER = "serverconfig/sym_rules";
     private static final String SEED_MARKER = ".s1_seeded";
+    private static final String DISABLED_PREFIX = "_";
 
     private record DefaultFile(String name, String content, boolean seedOnce) {}
+    private static final String EXAMPLE_FILE = "_example.json";
 
     private static final DefaultFile EXAMPLE = new DefaultFile(
             "_example.json",
@@ -70,48 +72,71 @@ public final class RuleLoader {
 
     private static final DefaultFile[] DEFAULT_FILES = { EXAMPLE, EASTER_EGG };
 
-    public static Map<String, RemovalRule> loadAll(Path worldRulesDir) {
-        Map<String, RemovalRule> result = new HashMap<>();
+    public record LoadResult(
+            Map<String, RemovalRule> activeRules,
+            Map<String, RemovalRule> disabledRules,
+            Map<String, RuleSource> sources
+    ) {}
+
+    public static LoadResult loadAll(Path worldRulesDir) {
+        Map<String, RemovalRule> active = new HashMap<>();
+        Map<String, RemovalRule> disabled = new HashMap<>();
+        Map<String, RuleSource> sources = new HashMap<>();
 
         ensureDirectoryExists(GLOBAL_RULES_DIR);
         writeDefaultsIfMissing(GLOBAL_RULES_DIR);
-        result.putAll(readDirectory(GLOBAL_RULES_DIR, "global"));
+        readInto(GLOBAL_RULES_DIR, false, active, disabled, sources);
 
         if (worldRulesDir != null) {
             ensureDirectoryExists(worldRulesDir);
-            result.putAll(readDirectory(worldRulesDir, "world"));
+            readInto(worldRulesDir, true, active, disabled, sources);
         }
 
-        return result;
+        return new LoadResult(active, disabled, sources);
     }
 
-    private static Map<String, RemovalRule> readDirectory(Path dir, String source) {
-        Map<String, RemovalRule> out = new HashMap<>();
+    private static void readInto(Path dir, boolean isWorld,
+                                 Map<String, RemovalRule> outActive,
+                                 Map<String, RemovalRule> outDisabled,
+                                 Map<String, RuleSource> outSources) {
         try (Stream<Path> paths = Files.list(dir)) {
             paths.filter(p -> p.toString().endsWith(".json"))
                     .filter(Files::isRegularFile)
                     .forEach(path -> {
                         String fileName = path.getFileName().toString();
+                        if (fileName.equals(EXAMPLE_FILE)) return;
+
                         String ruleName = fileName.substring(0, fileName.length() - 5);
-                        if (ruleName.startsWith("_")) return;
+                        if (ruleName.isEmpty()) return;
+
+                        boolean isDisabled = ruleName.startsWith(DISABLED_PREFIX);
+                        String cleanName = isDisabled ? ruleName.substring(1) : ruleName;
+                        if (cleanName.isEmpty()) return;
 
                         try {
-                            RemovalRule rule = parseRule(ruleName, path);
-                            if (rule != null) out.put(ruleName, rule);
+                            RemovalRule rule = parseRule(cleanName, path, isDisabled);
+                            if (rule == null) return;
+
+                            if (isDisabled) {
+                                outDisabled.put(cleanName, rule);
+                            } else {
+                                outActive.put(cleanName, rule);
+                            }
+                            outSources.put(cleanName, new RuleSource(cleanName, path, isWorld));
                         } catch (Exception e) {
                             DebugLog.log(DebugLog.Channel.RULE_ERROR,
                                     "Failed to parse %s rule '%s': %s",
-                                    source, fileName, e.getMessage());
+                                    isWorld ? "world" : "global", fileName, e.getMessage());
                         }
                     });
         } catch (IOException e) {
             DebugLog.log(DebugLog.Channel.RULE_ERROR,
-                    "Failed to list %s rules dir: %s", source, e.getMessage());
+                    "Failed to list %s rules dir: %s",
+                    isWorld ? "world" : "global", e.getMessage());
         }
-        return out;
     }
 
-    private static RemovalRule parseRule(String name, Path path) throws IOException {
+    private static RemovalRule parseRule(String name, Path path, boolean disabled) throws IOException {
         try (Reader reader = Files.newBufferedReader(path)) {
             JsonElement root = JsonParser.parseReader(reader);
             if (!root.isJsonObject()) {
@@ -134,7 +159,7 @@ public final class RuleLoader {
                 return null;
             }
 
-            return new RemovalRule(name, entities, entityTags, dimensions);
+            return new RemovalRule(name, entities, entityTags, dimensions, disabled);
         }
     }
 

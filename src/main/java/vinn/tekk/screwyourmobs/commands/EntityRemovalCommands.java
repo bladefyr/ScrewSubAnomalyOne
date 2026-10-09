@@ -64,6 +64,7 @@ public class EntityRemovalCommands {
         dispatcher.register(
                 Commands.literal("sym")
                         .requires(src -> src.hasPermission(2))
+                        .executes(EntityRemovalCommands::openScreen)
                         .then(Commands.literal("reload").executes(EntityRemovalCommands::reload))
                         .then(Commands.literal("list").executes(EntityRemovalCommands::list))
                         .then(Commands.literal("stats").executes(EntityRemovalCommands::stats))
@@ -136,6 +137,21 @@ public class EntityRemovalCommands {
                             rule.name(), finalCount, dims)),
                     false);
         }
+        return 1;
+    }
+
+    private static int openScreen(CommandContext<CommandSourceStack> ctx) {
+        if (net.neoforged.fml.loading.FMLLoader.getDist() == net.neoforged.api.distmarker.Dist.DEDICATED_SERVER) {
+            ctx.getSource().sendFailure(Component.literal(
+                    "§cThe rule screen is client-only. Use /symrules or open it in singleplayer."));
+            return 0;
+        }
+
+        net.minecraft.client.Minecraft.getInstance().execute(() ->
+                net.minecraft.client.Minecraft.getInstance().setScreen(
+                        new vinn.tekk.screwyourmobs.client.RuleEditorScreen(
+                                net.minecraft.client.Minecraft.getInstance().screen)));
+
         return 1;
     }
 

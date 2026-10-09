@@ -10,7 +10,8 @@ public record RemovalRule(
         String name,
         Set<ResourceLocation> entities,
         Set<TagKey<EntityType<?>>> entityTags,
-        Set<ResourceLocation> dimensions
+        Set<ResourceLocation> dimensions,
+        boolean disabled
 ) {
     public boolean isGlobal() {
         return dimensions.isEmpty();

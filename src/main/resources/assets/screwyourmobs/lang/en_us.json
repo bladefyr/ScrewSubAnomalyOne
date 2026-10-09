@@ -77,7 +77,35 @@
   "screwyourmobs.command.debug.on": "§aON",
   "screwyourmobs.command.debug.off": "§cOFF",
 
-  "_comment3": "Chat prefix tags",
+  "_comment3": "Rule list UI tags",
+
+  "screwyourmobs.screen.title": "ScrewYourMobs! - Rules for '%s'",
+  "screwyourmobs.screen.title.no_world": "No world loaded",
+
+  "screwyourmobs.screen.section.global": "GLOBAL",
+  "screwyourmobs.screen.section.world": "THIS WORLD",
+  "screwyourmobs.screen.empty": "No rules loaded.",
+
+  "screwyourmobs.screen.status.good": "Enabled",
+  "screwyourmobs.screen.status.problem": "Enabled - has validation warnings",
+  "screwyourmobs.screen.status.bad": "Disabled",
+
+  "screwyourmobs.screen.button.delete": "Delete",
+  "screwyourmobs.screen.button.disable": "Disable",
+  "screwyourmobs.screen.button.enable": "Enable",
+  "screwyourmobs.screen.button.reload": "Reload",
+
+  "screwyourmobs.screen.delete.title": "Delete Rule?",
+  "screwyourmobs.screen.delete.message": "Are you sure you want to delete '%s'?\n\nThis cannot be undone.",
+
+  "screwyourmobs.screen.detail.no_selection": "Select a rule on the left.",
+  "screwyourmobs.screen.detail.disabled_banner": "⚠ This rule is disabled. It will not fire until enabled.",
+  "screwyourmobs.screen.detail.entities": "ENTITIES (%s)",
+  "screwyourmobs.screen.detail.tags": "TAGS (%s)",
+  "screwyourmobs.screen.detail.dimensions": "DIMENSIONS (%s)",
+  "screwyourmobs.screen.detail.dimensions.all": "DIMENSIONS (all)",
+
+  "_comment4": "Chat prefix tags",
 
   "screwyourmobs.prefix.success": "[ScrewYourMobs!]",
   "screwyourmobs.prefix.warn": "[ScrewYourMobs!]",

@@ -7,9 +7,12 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
 import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
 import vinn.tekk.screwyourmobs.debug.DebugLog;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +27,8 @@ public final class RuleManager {
     private RuleManager() {}
 
     private static volatile Map<String, RemovalRule> RULES = Map.of();
+    private static volatile Map<String, RuleSource> RULE_SOURCES = Map.of();
+    private static volatile Map<String, RemovalRule> DISABLED_RULES = Map.of();
     private static volatile Map<ResourceLocation, List<RemovalRule>> GLOBAL_INDEX = Map.of();
     private static volatile Map<ResourceLocation, Map<ResourceLocation, List<RemovalRule>>> DIMENSION_INDEX = Map.of();
     private static volatile Map<TagKey<EntityType<?>>, List<RemovalRule>> GLOBAL_TAG_INDEX = Map.of();
@@ -44,10 +49,14 @@ public final class RuleManager {
             server.levelKeys().forEach(key -> knownDimensions.add(key.location()));
         }
 
-        Map<String, RemovalRule> loaded = RuleLoader.loadAll(worldRulesDir);
-        RULES = Collections.unmodifiableMap(loaded);
+        RuleLoader.LoadResult result = RuleLoader.loadAll(worldRulesDir);
+        Map<String, RemovalRule> loaded = result.activeRules();
 
-        // Validate against registries
+        RULES = Collections.unmodifiableMap(loaded);
+        DISABLED_RULES = Collections.unmodifiableMap(result.disabledRules());
+        RULE_SOURCES = Collections.unmodifiableMap(result.sources());
+
+        // Validate — only active rules
         if (server != null && EntityRemovalConfig.RULES_VALIDATE_ON_LOAD.get()) {
             LAST_WARNINGS = RuleValidator.validate(loaded, knownDimensions);
             for (String warning : LAST_WARNINGS) {
@@ -177,4 +186,69 @@ public final class RuleManager {
     public static RemovalRule getRule(String name) { return RULES.get(name); }
     public static Map<String, RemovalRule> getAllRules() { return RULES; }
     public static List<String> getLastWarnings() { return LAST_WARNINGS; }
+
+    public static RuleSource getSource(String name) {
+        return RULE_SOURCES.get(name);
+    }
+
+    public static Map<String, RuleSource> getAllSources() {
+        return RULE_SOURCES;
+    }
+
+    public static Map<String, RemovalRule> getDisabledRules() {
+        return DISABLED_RULES;
+    }
+
+    public static RemovalRule getRuleIncludingDisabled(String name) {
+        RemovalRule r = RULES.get(name);
+        return r != null ? r : DISABLED_RULES.get(name);
+    }
+
+    /** @return true if the rule is currently disabled. */
+    public static boolean isDisabled(String name) {
+        return DISABLED_RULES.containsKey(name);
+    }
+
+    /**
+     * Rename the rule file, adding/removing the "_" prefix.
+     * Caller is responsible for calling reload() afterward.
+     */
+    public static boolean toggleDisabled(String name) {
+        RuleSource source = RULE_SOURCES.get(name);
+        if (source == null) return false;
+
+        Path path = source.path();
+        String fileName = path.getFileName().toString();
+        Path target;
+
+        if (fileName.startsWith("_")) {
+            target = path.resolveSibling(fileName.substring(1));
+        } else {
+            target = path.resolveSibling("_" + fileName);
+        }
+
+        try {
+            Files.move(path, target);
+            return true;
+        } catch (IOException e) {
+            ScrewYourMobsMod.LOGGER.error(
+                    "[ScrewYourMobs!] Could not toggle rule '{}': {}", name, e.getMessage());
+            return false;
+        }
+    }
+
+    /** Delete the rule file. Caller is responsible for calling reload() afterward. */
+    public static boolean deleteRule(String name) {
+        RuleSource source = RULE_SOURCES.get(name);
+        if (source == null) return false;
+
+        try {
+            Files.delete(source.path());
+            return true;
+        } catch (IOException e) {
+            ScrewYourMobsMod.LOGGER.error(
+                    "[ScrewYourMobs!] Could not delete rule '{}': {}", name, e.getMessage());
+            return false;
+        }
+    }
 }

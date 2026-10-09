@@ -1,4 +1,4 @@
-package vinn.tekk.screwyourmobs.debug;
+package vinn.tekk.screwyourmobs.helpers;
 
 /**
  * Classic Levenshtein distance. O(n*m) time, O(min(n,m)) space.

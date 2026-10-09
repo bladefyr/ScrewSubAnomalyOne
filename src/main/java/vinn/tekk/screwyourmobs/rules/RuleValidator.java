@@ -6,10 +6,9 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforgespi.language.IModInfo;
-import vinn.tekk.screwyourmobs.debug.Levenshtein;
+import vinn.tekk.screwyourmobs.helpers.Levenshtein;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
