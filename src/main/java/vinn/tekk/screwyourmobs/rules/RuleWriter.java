@@ -81,7 +81,12 @@ public final class RuleWriter {
         if (source == null) return false;
 
         Path oldPath = source.path();
-        Path newPath = oldPath.resolveSibling(newName + ".json");
+        String fileName = oldPath.getFileName().toString();
+        boolean disabled = fileName.startsWith("_");
+
+        // Preserve the disabled prefix (if any) so renaming doesn't silently enable the rule
+        String prefix = disabled ? "_" : "";
+        Path newPath = oldPath.resolveSibling(prefix + newName + ".json");
 
         if (Files.exists(newPath)) return false;
 

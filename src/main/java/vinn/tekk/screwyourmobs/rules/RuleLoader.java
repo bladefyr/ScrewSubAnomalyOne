@@ -160,12 +160,8 @@ public final class RuleLoader {
 
         Set<ResourceLocation> dimensions = parseIdSet(obj.getAsJsonArray("dimensions"), name, "dimensions");
 
-        if (entities.isEmpty() && entityTags.isEmpty()) {
-            DebugLog.log(DebugLog.Channel.RULE_ERROR,
-                    "Rule '%s' has no entities or tags - skipped.", name);
-            return null;
-        }
-
+        // No more "has no entities or tags - skipped" check.
+        // Empty rules are valid — they're just containers waiting to be filled.
         return new RemovalRule(name, entities, entityTags, dimensions, disabled);
     }
 

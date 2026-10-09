@@ -170,6 +170,50 @@ public class RuleListWidget extends AbstractWidget {
         return RuleStatus.GOOD;
     }
 
+    public void selectByName(String name, boolean isWorld) {
+        RuleKey key = new RuleKey(name, isWorld);
+
+        // Find the row with this key and select it
+        for (int i = 0; i < rows.size(); i++) {
+            if (rows.get(i) instanceof RuleRow(RemovalRule rule, boolean rowIsWorld)) {
+                if (rule.name().equals(name) && rowIsWorld == isWorld) {
+                    selectedKey = key;
+                    onSelect.accept(key);
+                    ensureVisible(i);
+                    return;
+                }
+            }
+        }
+
+        // Fallback: try the other scope
+        boolean otherScope = !isWorld;
+        for (int i = 0; i < rows.size(); i++) {
+            if (rows.get(i) instanceof RuleRow(RemovalRule rule, boolean rowIsWorld)) {
+                if (rule.name().equals(name) && rowIsWorld == otherScope) {
+                    selectedKey = new RuleKey(name, otherScope);
+                    onSelect.accept(selectedKey);
+                    ensureVisible(i);
+                    return;
+                }
+            }
+        }
+
+        // Not found — clear selection
+        selectedKey = null;
+        onSelect.accept(null);
+    }
+
+    private void ensureVisible(int index) {
+        int rowTop = index * ROW_HEIGHT;
+        int rowBottom = rowTop + ROW_HEIGHT;
+        if (rowTop < scrollOffset) {
+            scrollOffset = rowTop;
+        } else if (rowBottom > scrollOffset + height) {
+            scrollOffset = rowBottom - height;
+        }
+        scrollOffset = Math.clamp(scrollOffset, 0, maxScroll());
+    }
+
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         if (!isMouseOver(mx, my)) return false;

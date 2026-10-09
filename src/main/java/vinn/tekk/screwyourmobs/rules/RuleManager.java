@@ -7,6 +7,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.storage.LevelResource;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
 import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
@@ -22,6 +26,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static vinn.tekk.screwyourmobs.ScrewYourMobsMod.MODID;
 
 public final class RuleManager {
 
@@ -258,4 +264,19 @@ public final class RuleManager {
             return false;
         }
     }
+
+    public static void clearClientCache() {
+        RULES = Map.of();
+        RAW_RULES = Map.of();
+        RULE_SOURCES = Map.of();
+        DISABLED_RULES = Map.of();
+        GLOBAL_INDEX = Map.of();
+        DIMENSION_INDEX = Map.of();
+        GLOBAL_TAG_INDEX = Map.of();
+        DIMENSION_TAG_INDEX = Map.of();
+        LAST_WARNINGS = List.of();
+        totalRules = 0;
+        totalEntityEntries = 0;
+    }
 }
+

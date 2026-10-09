@@ -87,7 +87,7 @@
   "screwyourmobs.screen.empty": "No rules loaded.",
 
   "screwyourmobs.screen.status.good": "Enabled",
-  "screwyourmobs.screen.status.problem": "Enabled - has validation warnings",
+  "screwyourmobs.screen.status.problem": "Validation error",
   "screwyourmobs.screen.status.bad": "Disabled",
 
   "screwyourmobs.screen.button.delete": "Delete",
@@ -104,6 +104,23 @@
   "screwyourmobs.screen.detail.tags": "TAGS (%s)",
   "screwyourmobs.screen.detail.dimensions": "DIMENSIONS (%s)",
   "screwyourmobs.screen.detail.dimensions.all": "DIMENSIONS (all)",
+
+  "screwyourmobs.screen.button.new_rule": "§a+ New Rule",
+
+  "screwyourmobs.screen.new_rule.title": "Create New Rule",
+
+  "screwyourmobs.screen.add_entity.title": "Add Entity to '%s'",
+  "screwyourmobs.screen.add_dimension.title": "Add Dimension to '%s'",
+  "screwyourmobs.screen.rename.title": "Rename Rule '%s'",
+
+  "screwyourmobs.screen.detail.rename": "§e[Rename]",
+  "screwyourmobs.screen.detail.add_entity": "§a[+ Add Entity or Tag]",
+  "screwyourmobs.screen.detail.add_dimension": "§a[+ Add Dimension]",
+
+  "screwyourmobs.screen.remove_entity.title": "Remove Entity?",
+  "screwyourmobs.screen.remove_entity.message": "Remove '%s' from rule '%s'?",
+  "screwyourmobs.screen.remove_dimension.title": "Remove Dimension?",
+  "screwyourmobs.screen.remove_dimension.message": "Remove '%s' from rule '%s'?",
 
   "screwyourmobs.screen.input.ok": "Confirm",
   "screwyourmobs.screen.input.no_matches": "No matches.",

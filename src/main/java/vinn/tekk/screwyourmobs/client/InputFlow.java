@@ -5,17 +5,11 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
  * Orchestrates the prompt → validate → correct → callback loop.
- *
- * One call site does all of:
- *  - opens InputScreen for the user to type
- *  - runs the validator on submit
- *  - if valid: calls onSuccess
- *  - if invalid: opens CorrectionScreen with the suggested fix
- *  - handles Use / Edit / Cancel outcomes
  */
 public final class InputFlow {
 
@@ -33,28 +27,25 @@ public final class InputFlow {
         }
     }
 
-    /**
-     * @param parent       screen to return to on cancel
-     * @param title        shown on the input screen
-     * @param options      autocomplete candidates (may be empty for no autocomplete)
-     * @param initialValue pre-filled text (may be null)
-     * @param validator    checks input, produces suggestion if invalid
-     * @param onSuccess    called with a validated value
-     */
-    public static void prompt(Minecraft mc,
-                              Screen parent,
-                              Component title,
-                              List<String> options,
-                              String initialValue,
-                              Validator validator,
-                              Consumer<String> onSuccess) {
-        mc.setScreen(new InputScreen(parent, title, options, initialValue, entered -> {
+    public static void prompt(Minecraft mc, Screen parent, Component title,
+                              List<String> options, String initialValue,
+                              Validator validator, Consumer<String> onSuccess) {
+        prompt(mc, parent, title, options, initialValue, Set.of(),
+                validator, onSuccess);
+    }
+
+    public static void prompt(Minecraft mc, Screen parent, Component title,
+                              List<String> options, String initialValue,
+                              Set<String> markedOptions,
+                              Validator validator, Consumer<String> onSuccess) {
+        mc.setScreen(new InputScreen(parent, title, options, initialValue,
+                markedOptions, entered -> {
             if (entered == null) {
-                // cancelled — return to parent
                 mc.setScreen(parent);
                 return;
             }
-            validateAndProceed(mc, parent, title, options, entered, validator, onSuccess);
+            validateAndProceed(mc, parent, title, options, markedOptions,
+                    entered, validator, onSuccess);
         }));
     }
 
@@ -62,11 +53,13 @@ public final class InputFlow {
                                            Screen parent,
                                            Component title,
                                            List<String> options,
+                                           Set<String> markedOptions,
                                            String input,
                                            Validator validator,
                                            Consumer<String> onSuccess) {
         ValidationResult result = validator.check(input);
         if (result.valid()) {
+            mc.setScreen(parent);
             onSuccess.accept(input);
             return;
         }
@@ -75,10 +68,12 @@ public final class InputFlow {
             switch (outcome) {
                 case ACCEPT_SUGGESTION -> {
                     if (result.suggestion() != null) {
+                        mc.setScreen(parent);
                         onSuccess.accept(result.suggestion());
                     }
                 }
-                case EDIT -> prompt(mc, parent, title, options, input, validator, onSuccess);
+                case EDIT -> prompt(mc, parent, title, options, input,
+                        markedOptions, validator, onSuccess);
                 case CANCEL -> mc.setScreen(parent);
             }
         }));

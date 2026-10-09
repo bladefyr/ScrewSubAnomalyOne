@@ -8,8 +8,11 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
 import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
@@ -17,7 +20,6 @@ import vinn.tekk.screwyourmobs.debug.DebugLog;
 import vinn.tekk.screwyourmobs.procedures.EntityPurger;
 import vinn.tekk.screwyourmobs.rules.RemovalRule;
 import vinn.tekk.screwyourmobs.rules.RuleManager;
-import vinn.tekk.screwyourmobs.rules.RuleWriter;
 
 import java.util.List;
 import java.util.Map;
@@ -77,31 +79,10 @@ public class EntityRemovalCommands {
                                         .suggests(EntityRemovalCommands::suggestChannels)
                                         .then(Commands.argument("value", BoolArgumentType.bool())
                                                 .executes(EntityRemovalCommands::setDebugChannel))))
-
-                        // For debugging, removing later
-                        .then(Commands.literal("testadd")
-                                .then(Commands.argument("rule", StringArgumentType.word())
-                                        .then(Commands.argument("id", StringArgumentType.greedyString())
-                                                .executes(ctx -> {
-                                                    String rule = StringArgumentType.getString(ctx, "rule");
-                                                    String id = StringArgumentType.getString(ctx, "id");
-                                                    if (RuleWriter.addEntity(rule, id)) {
-                                                        RuleManager.reload();
-                                                        ctx.getSource().sendSuccess(
-                                                                () -> Component.literal("Added " + id + " to " + rule),
-                                                                false);
-                                                    } else {
-                                                        ctx.getSource().sendFailure(
-                                                                Component.literal("Failed"));
-                                                    }
-                                                    return 1;
-                                                })))
-                                .then(Commands.literal("testinput")
-                                        .executes(ctx -> openTestInput(ctx, false))
-                                        .then(Commands.literal("tag")
-                                                .executes(ctx -> openTestInput(ctx, true)))))
         );
     }
+
+    // ---- Reload / List / Stats / Validate / Purge ----
 
     private static int reload(CommandContext<CommandSourceStack> ctx) {
         RuleManager.reload();
@@ -164,21 +145,6 @@ public class EntityRemovalCommands {
         return 1;
     }
 
-    private static int openScreen(CommandContext<CommandSourceStack> ctx) {
-        if (net.neoforged.fml.loading.FMLLoader.getDist() == net.neoforged.api.distmarker.Dist.DEDICATED_SERVER) {
-            ctx.getSource().sendFailure(Component.literal(
-                    "§cThe rule screen is client-only. Use /symrules or open it in singleplayer."));
-            return 0;
-        }
-
-        net.minecraft.client.Minecraft.getInstance().execute(() ->
-                net.minecraft.client.Minecraft.getInstance().setScreen(
-                        new vinn.tekk.screwyourmobs.client.RuleEditorScreen(
-                                net.minecraft.client.Minecraft.getInstance().screen)));
-
-        return 1;
-    }
-
     private static int stats(CommandContext<CommandSourceStack> ctx) {
         ctx.getSource().sendSuccess(
                 () -> prefixed(Component.translatable(
@@ -223,6 +189,29 @@ public class EntityRemovalCommands {
         return 1;
     }
 
+    // ---- Screen opener ----
+
+    private static int openScreen(CommandContext<CommandSourceStack> ctx) {
+        if (FMLLoader.getDist() == Dist.DEDICATED_SERVER) {
+            ctx.getSource().sendFailure(Component.literal(
+                    "§cThe rule screen is client-only. Use /symrules in singleplayer or LAN."));
+            return 0;
+        }
+
+        openScreenOnClient();
+        return 1;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void openScreenOnClient() {
+        net.minecraft.client.Minecraft.getInstance().execute(() ->
+                net.minecraft.client.Minecraft.getInstance().setScreen(
+                        new vinn.tekk.screwyourmobs.client.RuleEditorScreen(
+                                net.minecraft.client.Minecraft.getInstance().screen)));
+    }
+
+    // ---- Debug ----
+
     private static int debugStatus(CommandContext<CommandSourceStack> ctx) {
         boolean enabled = EntityRemovalConfig.DEBUG_ENABLED.get();
         Component onOff = Component.translatable(enabled
@@ -250,18 +239,6 @@ public class EntityRemovalCommands {
         return 1;
     }
 
-    private static int setDebugMaster(CommandContext<CommandSourceStack> ctx, boolean value) {
-        EntityRemovalConfig.DEBUG_ENABLED.set(value);
-        ctx.getSource().sendSuccess(
-                () -> prefixed(Component.translatable(
-                        "screwyourmobs.command.debug.master",
-                        Component.translatable(value
-                                ? "screwyourmobs.command.debug.on"
-                                : "screwyourmobs.command.debug.off"))),
-                true);
-        return 1;
-    }
-
     private static int setDebugChannel(CommandContext<CommandSourceStack> ctx) {
         String channel = StringArgumentType.getString(ctx, "channel");
         boolean value = BoolArgumentType.getBool(ctx, "value");
@@ -284,109 +261,5 @@ public class EntityRemovalCommands {
                         "screwyourmobs.command.debug.channel.set", channel, value)),
                 true);
         return 1;
-    }
-
-    private static int openTestInput(CommandContext<CommandSourceStack> ctx, boolean tagMode) {
-        if (net.neoforged.fml.loading.FMLLoader.getDist() == net.neoforged.api.distmarker.Dist.DEDICATED_SERVER) {
-            ctx.getSource().sendFailure(Component.literal("§cClient-only command."));
-            return 0;
-        }
-
-        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-        mc.execute(() -> {
-            // Build the option list — all entity IDs, plus tags with "#"
-            List<String> options = new java.util.ArrayList<>();
-            for (ResourceLocation id : net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet()) {
-                options.add(id.toString());
-            }
-            net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTags()
-                    .forEach(pair -> options.add("#" + pair.getFirst().location()));
-            options.sort(String::compareToIgnoreCase);
-
-            vinn.tekk.screwyourmobs.client.InputFlow.prompt(
-                    mc,
-                    mc.screen,
-                    Component.literal(tagMode
-                            ? "Test Input — Tag Mode"
-                            : "Test Input — Entity Mode"),
-                    options,
-                    tagMode ? "#" : "",
-                    input -> validateTestInput(input, tagMode),
-                    accepted -> {
-                        if (mc.player != null) {
-                            mc.player.sendSystemMessage(Component.literal(
-                                    "§a[ScrewYourMobs!] Accepted: §f" + accepted));
-                        }
-                    }
-            );
-        });
-
-        ctx.getSource().sendSuccess(
-                () -> Component.literal("§7Opening test input screen..."), false);
-        return 1;
-    }
-
-    private static vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult
-    validateTestInput(String input, boolean tagMode) {
-        boolean isTag = input.startsWith("#");
-        String bare = isTag ? input.substring(1) : input;
-
-        ResourceLocation rl = ResourceLocation.tryParse(bare);
-        if (rl == null) {
-            return vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult.bad(null);
-        }
-
-        if (isTag) {
-            // Check the tag exists in the registry
-            boolean exists = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTags()
-                    .anyMatch(p -> p.getFirst().location().equals(rl));
-            if (exists) {
-                return vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult.ok();
-            }
-
-            // Suggest the closest tag
-            String suggestion = suggestClosestTag(rl);
-            return vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult.bad(
-                    suggestion != null ? "#" + suggestion : null);
-        }
-
-        // Entity ID mode
-        if (net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.containsKey(rl)) {
-            return vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult.ok();
-        }
-
-        String suggestion = suggestClosestEntity(rl);
-        return vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult.bad(suggestion);
-    }
-
-    private static String suggestClosestEntity(ResourceLocation unknown) {
-        String target = unknown.toString();
-        String best = null;
-        int bestDist = Integer.MAX_VALUE;
-        for (ResourceLocation candidate : net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet()) {
-            int dist = vinn.tekk.screwyourmobs.helpers.Levenshtein.distance(target, candidate.toString());
-            if (dist < bestDist) {
-                bestDist = dist;
-                best = candidate.toString();
-            }
-        }
-        return (best != null && bestDist <= 5) ? best : null;
-    }
-
-    private static String suggestClosestTag(ResourceLocation unknown) {
-        String target = unknown.toString();
-        String best = null;
-        int bestDist = Integer.MAX_VALUE;
-        var iter = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTags().iterator();
-        while (iter.hasNext()) {
-            var pair = iter.next();
-            String candidate = pair.getFirst().location().toString();
-            int dist = vinn.tekk.screwyourmobs.helpers.Levenshtein.distance(target, candidate);
-            if (dist < bestDist) {
-                bestDist = dist;
-                best = candidate;
-            }
-        }
-        return (best != null && bestDist <= 5) ? best : null;
     }
 }

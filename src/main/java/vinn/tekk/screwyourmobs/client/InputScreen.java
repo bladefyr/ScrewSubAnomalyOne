@@ -23,6 +23,7 @@ public class InputScreen extends Screen {
     private final List<String> allOptions;
     private final Consumer<String> onAccept;
     private final String initialValue;
+    private final java.util.Set<String> markedOptions;
 
     private EditBox input;
     private List<String> suggestions = List.of();
@@ -41,11 +42,21 @@ public class InputScreen extends Screen {
                        List<String> allOptions,
                        String initialValue,
                        Consumer<String> onAccept) {
+        this(parent, title, allOptions, initialValue, java.util.Set.of(), onAccept);
+    }
+
+    public InputScreen(Screen parent,
+                       Component title,
+                       List<String> allOptions,
+                       String initialValue,
+                       java.util.Set<String> markedOptions,
+                       Consumer<String> onAccept) {
         super(title);
         this.parent = parent;
         this.allOptions = allOptions;
-        this.onAccept = onAccept;
         this.initialValue = initialValue;
+        this.markedOptions = markedOptions;
+        this.onAccept = onAccept;
     }
 
     @Override
@@ -312,6 +323,7 @@ public class InputScreen extends Screen {
 
             String suggestion = suggestions.get(index);
             int y = suggestionTop + i * SUGGESTION_ROW_HEIGHT;
+            int x = this.input.getX() + 4;
 
             boolean highlighted;
             if (frozenSuggestions != null) {
@@ -323,8 +335,13 @@ public class InputScreen extends Screen {
 
             int color = highlighted ? 0xFFFFAA00 : 0xFFAAAAAA;
             String prefix = highlighted ? "▸ " : "  ";
-            gfx.drawString(this.font, prefix + suggestion,
-                    this.input.getX() + 4, y, color, false);
+
+            gfx.drawString(this.font, prefix + suggestion, x, y, color, false);
+
+            if (markedOptions.contains(suggestion)) {
+                int suffixX = x + this.font.width(prefix + suggestion);
+                gfx.drawString(this.font, " (taken)", suffixX, y, 0xFF808080, false);
+            }
         }
 
         // Scroll indicator

@@ -1,5 +1,6 @@
 package vinn.tekk.screwyourmobs.client;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -19,17 +20,47 @@ public class RuleDetailWidget extends AbstractWidget {
 
     private static final int ROW_HEIGHT = 12;
     private static final int SCROLLBAR_WIDTH = 6;
+    private static final int ACTION_ZONE_WIDTH = 80;
 
-    private sealed interface Line permits Text, Header, Spacer {}
+    // ---- Callback interface ----
+
+    public interface Callbacks {
+        void onNewRule();
+
+        void onAddEntity(String ruleName);
+        void onAddDimension(String ruleName);
+        void onRemoveEntity(String ruleName, String entityId);
+        void onRemoveDimension(String ruleName, String dimensionId);
+        void onRename(String ruleName);
+    }
+
+    // ---- Row model ----
+
+    /** What happens when the action zone of an ActionRow is clicked. */
+    private enum ActionType { RENAME, REMOVE_ENTITY, REMOVE_DIMENSION }
+
+    /** What happens when an AddRow is clicked. */
+    private enum AddType { ENTITY, DIMENSION }
+
+    private sealed interface Line permits Text, Header, Spacer, ActionRow, AddRow {}
     private record Text(Component text, int color) implements Line {}
     private record Header(Component text) implements Line {}
     private record Spacer() implements Line {}
+    private record ActionRow(Component content, Component action,
+                             ActionType actionType, String payload) implements Line {}
+    private record AddRow(Component label, AddType addType) implements Line {}
+
+    // ---- State ----
 
     private final List<Line> lines = new ArrayList<>();
     private double scrollOffset = 0;
 
-    public RuleDetailWidget(int x, int y, int width, int height) {
+    private RuleListWidget.RuleKey currentKey;
+    private final Callbacks callbacks;
+
+    public RuleDetailWidget(int x, int y, int width, int height, Callbacks callbacks) {
         super(x, y, width, height, Component.empty());
+        this.callbacks = callbacks;
         rebuild(null);
     }
 
@@ -37,7 +68,10 @@ public class RuleDetailWidget extends AbstractWidget {
         rebuild(key);
     }
 
+    // ---- Building the line list ----
+
     private void rebuild(RuleListWidget.RuleKey key) {
+        this.currentKey = key;
         lines.clear();
         scrollOffset = 0;
 
@@ -53,9 +87,16 @@ public class RuleDetailWidget extends AbstractWidget {
             return;
         }
 
-        lines.add(new Text(Component.literal(rule.name()), 0xFFFFFF));
+        String ruleName = key.name();
 
-        RuleSource src = RuleManager.getSource(key.name());
+        // --- Header: rule name + [Rename] ---
+        lines.add(new ActionRow(
+                Component.literal(rule.name()),
+                Component.translatable("screwyourmobs.screen.detail.rename"),
+                ActionType.RENAME,
+                ruleName));
+
+        RuleSource src = RuleManager.getSource(ruleName);
         if (src != null) {
             lines.add(new Text(Component.literal("§7" + displayPath(src.path())), 0x808080));
         }
@@ -66,44 +107,65 @@ public class RuleDetailWidget extends AbstractWidget {
         }
 
         for (String w : RuleManager.getLastWarnings()) {
-            if (w.contains("'" + key.name() + "'")) {
+            if (w.contains("'" + ruleName + "'")) {
                 lines.add(new Text(Component.literal("§e⚠ " + w), 0xFFFF55));
             }
         }
 
         lines.add(new Spacer());
 
+        // --- Entities ---
         if (!rule.entities().isEmpty()) {
             lines.add(new Header(Component.translatable(
                     "screwyourmobs.screen.detail.entities", rule.entities().size())));
             for (ResourceLocation id : rule.entities()) {
-                lines.add(new Text(Component.literal("§7▪ §f" + id), 0xFFFFFF));
+                lines.add(new ActionRow(
+                        Component.literal("§7▪ §f" + id),
+                        Component.literal("§c[×]"),
+                        ActionType.REMOVE_ENTITY,
+                        id.toString()));
             }
-            lines.add(new Spacer());
         }
+        lines.add(new AddRow(
+                Component.translatable("screwyourmobs.screen.detail.add_entity"),
+                AddType.ENTITY));
+        lines.add(new Spacer());
 
+        // --- Tags ---
         if (!rule.entityTags().isEmpty()) {
             lines.add(new Header(Component.translatable(
                     "screwyourmobs.screen.detail.tags", rule.entityTags().size())));
             for (TagKey<EntityType<?>> tag : rule.entityTags()) {
-                lines.add(new Text(
-                        Component.literal("§7▪ §b#" + tag.location()), 0xFFFFFF));
+                lines.add(new ActionRow(
+                        Component.literal("§7▪ §b#" + tag.location()),
+                        Component.literal("§c[×]"),
+                        ActionType.REMOVE_ENTITY,
+                        "#" + tag.location()));
             }
             lines.add(new Spacer());
         }
 
+        // --- Dimensions ---
         if (rule.dimensions().isEmpty()) {
             lines.add(new Header(Component.translatable(
                     "screwyourmobs.screen.detail.dimensions.all")));
         } else {
             lines.add(new Header(Component.translatable(
-                    "screwyourmobs.screen.detail.dimensions",
-                    rule.dimensions().size())));
+                    "screwyourmobs.screen.detail.dimensions", rule.dimensions().size())));
             for (ResourceLocation id : rule.dimensions()) {
-                lines.add(new Text(Component.literal("§7▪ §d" + id), 0xFFFFFF));
+                lines.add(new ActionRow(
+                        Component.literal("§7▪ §d" + id),
+                        Component.literal("§c[×]"),
+                        ActionType.REMOVE_DIMENSION,
+                        id.toString()));
             }
         }
+        lines.add(new AddRow(
+                Component.translatable("screwyourmobs.screen.detail.add_dimension"),
+                AddType.DIMENSION));
     }
+
+    // ---- Helpers ----
 
     private int contentHeight() {
         return lines.size() * ROW_HEIGHT;
@@ -136,6 +198,22 @@ public class RuleDetailWidget extends AbstractWidget {
         }
     }
 
+    /** @return the row index under the given Y coordinate, or -1 if outside. */
+    private int rowIndexAt(double my) {
+        if (!isMouseOver(getX(), my)) return -1;
+        int visibleTop = (int) scrollOffset;
+        int localY = (int) my - getY() + visibleTop;
+        int index = localY / ROW_HEIGHT;
+        return (index >= 0 && index < lines.size()) ? index : -1;
+    }
+
+    /** @return true if the mouse X is in the right-edge action zone. */
+    private boolean isInActionZone(double mx) {
+        return mx >= getX() + width - ACTION_ZONE_WIDTH - SCROLLBAR_WIDTH;
+    }
+
+    // ---- Rendering ----
+
     @Override
     protected void renderWidget(GuiGraphics gfx, int mouseX, int mouseY, float partial) {
         gfx.fill(getX(), getY(), getX() + width, getY() + height, 0x40000000);
@@ -145,6 +223,10 @@ public class RuleDetailWidget extends AbstractWidget {
             int visibleTop = (int) scrollOffset;
             int visibleBottom = visibleTop + height;
 
+            int hoveredIndex = rowIndexAt(mouseY);
+            boolean hoveredActionZone = isInActionZone(mouseX);
+            int contentWidth = width - 4 - SCROLLBAR_WIDTH - 4;
+
             for (int i = 0; i < lines.size(); i++) {
                 int lineTop = i * ROW_HEIGHT;
                 int lineBottom = lineTop + ROW_HEIGHT;
@@ -152,22 +234,66 @@ public class RuleDetailWidget extends AbstractWidget {
 
                 int drawY = getY() + lineTop - visibleTop;
                 Line line = lines.get(i);
+                boolean rowHovered = (i == hoveredIndex);
 
-                boolean rowHovered = mouseX >= getX() && mouseX <= getX() + width
-                        && mouseY >= drawY && mouseY <= drawY + ROW_HEIGHT;
+                switch (line) {
+                    case Text(Component text, int color) ->
+                            MarqueeText.draw(gfx, text,
+                                    getX() + 4, drawY + 1, contentWidth,
+                                    color, rowHovered);
 
-                if (line instanceof Text(Component text, int color)) {
-                    MarqueeText.draw(gfx, text,
-                            getX() + 4, drawY + 1,
-                            width - 4 - SCROLLBAR_WIDTH - 4,
-                            color,
-                            rowHovered);
-                } else if (line instanceof Header(Component text)) {
-                    MarqueeText.draw(gfx, text,
-                            getX() + 4, drawY + 1,
-                            width - 4 - SCROLLBAR_WIDTH - 4,
-                            0xFFAA00,
-                            rowHovered);
+                    case Header(Component text) ->
+                            MarqueeText.draw(gfx, text,
+                                    getX() + 4, drawY + 1, contentWidth,
+                                    0xFFAA00, rowHovered);
+
+                    case Spacer() -> { /* nothing */ }
+
+                    case ActionRow(Component content, Component action,
+                                   ActionType actionType, String payload) -> {
+                        var font = Minecraft.getInstance().font;
+                        int actionWidth = font.width(action);
+                        int actionX = getX() + width - SCROLLBAR_WIDTH - 4 - actionWidth;
+                        int actionY = drawY + 1;
+
+                        // Content on the left (marquee if too long)
+                        int contentMaxWidth = actionX - (getX() + 4) - 4;
+                        MarqueeText.draw(gfx, content,
+                                getX() + 4, drawY + 1, contentMaxWidth,
+                                0xFFFFFF, rowHovered);
+
+                        // Action zone highlight
+                        boolean actionHovered = rowHovered && hoveredActionZone;
+                        if (actionHovered) {
+                            int pad = 2;
+                            int bgColor = (actionType == ActionType.RENAME)
+                                    ? 0x40FFAA00
+                                    : 0x40FF5555;
+                            gfx.fill(actionX - pad, actionY - pad,
+                                    actionX + actionWidth + pad, actionY + font.lineHeight + pad,
+                                    bgColor);
+                        }
+
+                        // Action text
+                        int actionColor;
+                        if (actionType == ActionType.RENAME) {
+                            actionColor = actionHovered ? 0xFFFFAA00 : 0xFFFFFF88;
+                        } else {
+                            actionColor = actionHovered ? 0xFFFF5555 : 0xFFFFAAAA;
+                        }
+                        gfx.drawString(font, action, actionX, actionY, actionColor, false);
+                    }
+
+                    case AddRow(Component label, AddType addType) -> {
+                        if (rowHovered) {
+                            // Faint green bar behind the whole row
+                            gfx.fill(getX(), drawY, getX() + width - SCROLLBAR_WIDTH,
+                                    drawY + ROW_HEIGHT, 0x3055FF55);
+                        }
+                        int color = rowHovered ? 0xFF55FF55 : 0xFF55AA55;
+                        gfx.drawString(Minecraft.getInstance().font,
+                                label, getX() + 4, drawY + 1, color, false);
+                    }
                 }
             }
         } finally {
@@ -181,6 +307,46 @@ public class RuleDetailWidget extends AbstractWidget {
             gfx.fill(barX, getY(), barX + SCROLLBAR_WIDTH, getY() + height, 0x40000000);
             gfx.fill(barX, barY, barX + SCROLLBAR_WIDTH, barY + barHeight, 0xFFAAAAAA);
         }
+    }
+
+    // ---- Clicks ----
+
+    @Override
+    public boolean mouseClicked(double mx, double my, int button) {
+        if (button != 0) return false;
+        if (currentKey == null) return false;
+
+        int index = rowIndexAt(my);
+        if (index < 0) return false;
+
+        Line line = lines.get(index);
+        String ruleName = currentKey.name();
+
+        switch (line) {
+            case ActionRow(Component content, Component action,
+                           ActionType actionType, String payload) -> {
+                if (!isInActionZone(mx)) return false;
+
+                switch (actionType) {
+                    case RENAME -> callbacks.onRename(ruleName);
+                    case REMOVE_ENTITY -> callbacks.onRemoveEntity(ruleName, payload);
+                    case REMOVE_DIMENSION -> callbacks.onRemoveDimension(ruleName, payload);
+                }
+                return true;
+            }
+
+            case AddRow(Component label, AddType addType) -> {
+                switch (addType) {
+                    case ENTITY -> callbacks.onAddEntity(ruleName);
+                    case DIMENSION -> callbacks.onAddDimension(ruleName);
+                }
+                return true;
+            }
+
+            default -> { /* non-clickable */ }
+        }
+
+        return false;
     }
 
     @Override
