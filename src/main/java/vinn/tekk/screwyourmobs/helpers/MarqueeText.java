@@ -35,10 +35,7 @@ public final class MarqueeText {
 
         if (!hovered) {
             HOVER_STATE.remove(key);
-
-            gfx.enableScissor(x, y - 1, x + maxWidth, y + font.lineHeight + 1);
             gfx.drawString(font, text, x, y, color, false);
-            gfx.disableScissor();
             return;
         }
 
@@ -65,8 +62,6 @@ public final class MarqueeText {
                     * SCROLL_PX_PER_SEC / 1000.0);
         }
 
-        gfx.enableScissor(x, y - 1, x + maxWidth, y + font.lineHeight + 1);
         gfx.drawString(font, text, x - offset, y, color, false);
-        gfx.disableScissor();
     }
 }

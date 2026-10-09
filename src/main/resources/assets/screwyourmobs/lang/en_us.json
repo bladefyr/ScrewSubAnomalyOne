@@ -105,6 +105,15 @@
   "screwyourmobs.screen.detail.dimensions": "DIMENSIONS (%s)",
   "screwyourmobs.screen.detail.dimensions.all": "DIMENSIONS (all)",
 
+  "screwyourmobs.screen.input.ok": "Confirm",
+  "screwyourmobs.screen.input.no_matches": "No matches.",
+
+  "screwyourmobs.screen.correction.use": "Use '%s'",
+  "screwyourmobs.screen.correction.edit": "Edit",
+  "screwyourmobs.screen.correction.invalid": "'%s' isn't valid.",
+  "screwyourmobs.screen.correction.suggest": "Did you mean '%s'?",
+  "screwyourmobs.screen.correction.no_match": "No close match found.",
+
   "_comment4": "Chat prefix tags",
 
   "screwyourmobs.prefix.success": "[ScrewYourMobs!]",

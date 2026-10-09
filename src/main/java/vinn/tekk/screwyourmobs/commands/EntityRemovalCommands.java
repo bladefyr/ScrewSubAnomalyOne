@@ -17,6 +17,7 @@ import vinn.tekk.screwyourmobs.debug.DebugLog;
 import vinn.tekk.screwyourmobs.procedures.EntityPurger;
 import vinn.tekk.screwyourmobs.rules.RemovalRule;
 import vinn.tekk.screwyourmobs.rules.RuleManager;
+import vinn.tekk.screwyourmobs.rules.RuleWriter;
 
 import java.util.List;
 import java.util.Map;
@@ -76,6 +77,29 @@ public class EntityRemovalCommands {
                                         .suggests(EntityRemovalCommands::suggestChannels)
                                         .then(Commands.argument("value", BoolArgumentType.bool())
                                                 .executes(EntityRemovalCommands::setDebugChannel))))
+
+                        // For debugging, removing later
+                        .then(Commands.literal("testadd")
+                                .then(Commands.argument("rule", StringArgumentType.word())
+                                        .then(Commands.argument("id", StringArgumentType.greedyString())
+                                                .executes(ctx -> {
+                                                    String rule = StringArgumentType.getString(ctx, "rule");
+                                                    String id = StringArgumentType.getString(ctx, "id");
+                                                    if (RuleWriter.addEntity(rule, id)) {
+                                                        RuleManager.reload();
+                                                        ctx.getSource().sendSuccess(
+                                                                () -> Component.literal("Added " + id + " to " + rule),
+                                                                false);
+                                                    } else {
+                                                        ctx.getSource().sendFailure(
+                                                                Component.literal("Failed"));
+                                                    }
+                                                    return 1;
+                                                })))
+                                .then(Commands.literal("testinput")
+                                        .executes(ctx -> openTestInput(ctx, false))
+                                        .then(Commands.literal("tag")
+                                                .executes(ctx -> openTestInput(ctx, true)))))
         );
     }
 
@@ -260,5 +284,109 @@ public class EntityRemovalCommands {
                         "screwyourmobs.command.debug.channel.set", channel, value)),
                 true);
         return 1;
+    }
+
+    private static int openTestInput(CommandContext<CommandSourceStack> ctx, boolean tagMode) {
+        if (net.neoforged.fml.loading.FMLLoader.getDist() == net.neoforged.api.distmarker.Dist.DEDICATED_SERVER) {
+            ctx.getSource().sendFailure(Component.literal("§cClient-only command."));
+            return 0;
+        }
+
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        mc.execute(() -> {
+            // Build the option list — all entity IDs, plus tags with "#"
+            List<String> options = new java.util.ArrayList<>();
+            for (ResourceLocation id : net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet()) {
+                options.add(id.toString());
+            }
+            net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTags()
+                    .forEach(pair -> options.add("#" + pair.getFirst().location()));
+            options.sort(String::compareToIgnoreCase);
+
+            vinn.tekk.screwyourmobs.client.InputFlow.prompt(
+                    mc,
+                    mc.screen,
+                    Component.literal(tagMode
+                            ? "Test Input — Tag Mode"
+                            : "Test Input — Entity Mode"),
+                    options,
+                    tagMode ? "#" : "",
+                    input -> validateTestInput(input, tagMode),
+                    accepted -> {
+                        if (mc.player != null) {
+                            mc.player.sendSystemMessage(Component.literal(
+                                    "§a[ScrewYourMobs!] Accepted: §f" + accepted));
+                        }
+                    }
+            );
+        });
+
+        ctx.getSource().sendSuccess(
+                () -> Component.literal("§7Opening test input screen..."), false);
+        return 1;
+    }
+
+    private static vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult
+    validateTestInput(String input, boolean tagMode) {
+        boolean isTag = input.startsWith("#");
+        String bare = isTag ? input.substring(1) : input;
+
+        ResourceLocation rl = ResourceLocation.tryParse(bare);
+        if (rl == null) {
+            return vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult.bad(null);
+        }
+
+        if (isTag) {
+            // Check the tag exists in the registry
+            boolean exists = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTags()
+                    .anyMatch(p -> p.getFirst().location().equals(rl));
+            if (exists) {
+                return vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult.ok();
+            }
+
+            // Suggest the closest tag
+            String suggestion = suggestClosestTag(rl);
+            return vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult.bad(
+                    suggestion != null ? "#" + suggestion : null);
+        }
+
+        // Entity ID mode
+        if (net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.containsKey(rl)) {
+            return vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult.ok();
+        }
+
+        String suggestion = suggestClosestEntity(rl);
+        return vinn.tekk.screwyourmobs.client.InputFlow.ValidationResult.bad(suggestion);
+    }
+
+    private static String suggestClosestEntity(ResourceLocation unknown) {
+        String target = unknown.toString();
+        String best = null;
+        int bestDist = Integer.MAX_VALUE;
+        for (ResourceLocation candidate : net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet()) {
+            int dist = vinn.tekk.screwyourmobs.helpers.Levenshtein.distance(target, candidate.toString());
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = candidate.toString();
+            }
+        }
+        return (best != null && bestDist <= 5) ? best : null;
+    }
+
+    private static String suggestClosestTag(ResourceLocation unknown) {
+        String target = unknown.toString();
+        String best = null;
+        int bestDist = Integer.MAX_VALUE;
+        var iter = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTags().iterator();
+        while (iter.hasNext()) {
+            var pair = iter.next();
+            String candidate = pair.getFirst().location().toString();
+            int dist = vinn.tekk.screwyourmobs.helpers.Levenshtein.distance(target, candidate);
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = candidate;
+            }
+        }
+        return (best != null && bestDist <= 5) ? best : null;
     }
 }

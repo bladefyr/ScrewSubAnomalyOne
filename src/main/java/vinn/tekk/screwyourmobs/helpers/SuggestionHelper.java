@@ -1,0 +1,59 @@
+package vinn.tekk.screwyourmobs.helpers;
+
+import vinn.tekk.screwyourmobs.helpers.Levenshtein;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+/**
+ * Filters and ranks a static list of options against user input.
+ * Used by InputScreen to power autocomplete.
+ */
+public final class SuggestionHelper {
+
+    private SuggestionHelper() {}
+
+    private static final int MAX_SUGGESTIONS = 100;
+    private static final int FUZZY_MAX_DISTANCE = 5;
+
+    public static List<String> filter(List<String> options, String input) {
+        if (input == null || input.isEmpty()) {
+            return options.size() <= MAX_SUGGESTIONS
+                    ? options
+                    : options.subList(0, MAX_SUGGESTIONS);
+        }
+
+        String lower = input.toLowerCase();
+        List<Scored> matches = new ArrayList<>();
+
+        for (String candidate : options) {
+            String cl = candidate.toLowerCase();
+
+            int score;
+            if (cl.equals(lower)) {
+                score = 0;                    // exact
+            } else if (cl.startsWith(lower)) {
+                score = 1;                    // prefix
+            } else if (cl.contains(lower)) {
+                score = 2;                    // substring
+            } else {
+                int dist = Levenshtein.distance(lower, cl);
+                if (dist > FUZZY_MAX_DISTANCE) continue;
+                score = 10 + dist;            // fuzzy
+            }
+            matches.add(new Scored(candidate, score));
+        }
+
+        matches.sort(Comparator
+                .comparingInt(Scored::score)
+                .thenComparing(s -> s.text().toLowerCase()));
+
+        return matches.stream()
+                .limit(MAX_SUGGESTIONS)
+                .map(Scored::text)
+                .toList();
+    }
+
+    private record Scored(String text, int score) {}
+}

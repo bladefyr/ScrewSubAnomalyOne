@@ -141,34 +141,37 @@ public class RuleDetailWidget extends AbstractWidget {
         gfx.fill(getX(), getY(), getX() + width, getY() + height, 0x40000000);
 
         gfx.enableScissor(getX(), getY(), getX() + width, getY() + height);
+        try {
+            int visibleTop = (int) scrollOffset;
+            int visibleBottom = visibleTop + height;
 
-        int visibleTop = (int) scrollOffset;
-        int visibleBottom = visibleTop + height;
+            for (int i = 0; i < lines.size(); i++) {
+                int lineTop = i * ROW_HEIGHT;
+                int lineBottom = lineTop + ROW_HEIGHT;
+                if (lineBottom <= visibleTop || lineTop >= visibleBottom) continue;
 
-        for (int i = 0; i < lines.size(); i++) {
-            int lineTop = i * ROW_HEIGHT;
-            int lineBottom = lineTop + ROW_HEIGHT;
-            if (lineBottom <= visibleTop || lineTop >= visibleBottom) continue;
+                int drawY = getY() + lineTop - visibleTop;
+                Line line = lines.get(i);
 
-            int drawY = getY() + lineTop - visibleTop;
-            Line line = lines.get(i);
+                boolean rowHovered = mouseX >= getX() && mouseX <= getX() + width
+                        && mouseY >= drawY && mouseY <= drawY + ROW_HEIGHT;
 
-            boolean rowHovered = mouseX >= getX() && mouseX <= getX() + width
-                    && mouseY >= drawY && mouseY <= drawY + ROW_HEIGHT;
-
-            if (line instanceof Text(Component text, int color)) {
-                MarqueeText.draw(gfx, text,
-                        getX() + 4, drawY + 1,
-                        width - 4 - SCROLLBAR_WIDTH - 4,
-                        color,
-                        rowHovered);
-            } else if (line instanceof Header(Component text)) {
-                MarqueeText.draw(gfx, text,
-                        getX() + 4, drawY + 1,
-                        width - 4 - SCROLLBAR_WIDTH - 4,
-                        0xFFAA00,
-                        rowHovered);
+                if (line instanceof Text(Component text, int color)) {
+                    MarqueeText.draw(gfx, text,
+                            getX() + 4, drawY + 1,
+                            width - 4 - SCROLLBAR_WIDTH - 4,
+                            color,
+                            rowHovered);
+                } else if (line instanceof Header(Component text)) {
+                    MarqueeText.draw(gfx, text,
+                            getX() + 4, drawY + 1,
+                            width - 4 - SCROLLBAR_WIDTH - 4,
+                            0xFFAA00,
+                            rowHovered);
+                }
             }
+        } finally {
+            gfx.disableScissor();
         }
 
         if (scrollbarVisible()) {

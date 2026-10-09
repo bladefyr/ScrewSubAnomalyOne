@@ -1,5 +1,6 @@
 package vinn.tekk.screwyourmobs.rules;
 
+import com.google.gson.JsonObject;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -27,6 +28,7 @@ public final class RuleManager {
     private RuleManager() {}
 
     private static volatile Map<String, RemovalRule> RULES = Map.of();
+    private static volatile Map<String, JsonObject> RAW_RULES = Map.of();
     private static volatile Map<String, RuleSource> RULE_SOURCES = Map.of();
     private static volatile Map<String, RemovalRule> DISABLED_RULES = Map.of();
     private static volatile Map<ResourceLocation, List<RemovalRule>> GLOBAL_INDEX = Map.of();
@@ -50,6 +52,7 @@ public final class RuleManager {
         }
 
         RuleLoader.LoadResult result = RuleLoader.loadAll(worldRulesDir);
+        RAW_RULES = Collections.unmodifiableMap(result.rawRules());
         Map<String, RemovalRule> loaded = result.activeRules();
 
         RULES = Collections.unmodifiableMap(loaded);
@@ -197,6 +200,10 @@ public final class RuleManager {
 
     public static Map<String, RemovalRule> getDisabledRules() {
         return DISABLED_RULES;
+    }
+
+    public static JsonObject getRawRule(String name) {
+        return RAW_RULES.get(name);
     }
 
     public static RemovalRule getRuleIncludingDisabled(String name) {

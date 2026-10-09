@@ -97,27 +97,28 @@ public class RuleListWidget extends AbstractWidget {
         gfx.fill(getX(), getY(), getX() + width, getY() + height, 0x40000000);
 
         gfx.enableScissor(getX(), getY(), getX() + width, getY() + height);
+        try {
+            int visibleTop = (int) scrollOffset;
+            int visibleBottom = visibleTop + height;
 
-        int visibleTop = (int) scrollOffset;
-        int visibleBottom = visibleTop + height;
+            for (int i = 0; i < rows.size(); i++) {
+                int rowTop = i * ROW_HEIGHT;
+                int rowBottom = rowTop + ROW_HEIGHT;
+                if (rowBottom <= visibleTop || rowTop >= visibleBottom) continue;
 
-        for (int i = 0; i < rows.size(); i++) {
-            int rowTop = i * ROW_HEIGHT;
-            int rowBottom = rowTop + ROW_HEIGHT;
-            if (rowBottom <= visibleTop || rowTop >= visibleBottom) continue;
+                int drawY = getY() + rowTop - visibleTop;
+                Row row = rows.get(i);
 
-            int drawY = getY() + rowTop - visibleTop;
-            Row row = rows.get(i);
-
-            if (row instanceof SectionRow(Component label)) {
-                gfx.drawString(Minecraft.getInstance().font,
-                        label, getX() + 4, drawY + 6, 0xFFAA00, false);
-            } else if (row instanceof RuleRow r) {
-                renderRuleRow(gfx, r, drawY, mouseX, mouseY);
+                if (row instanceof SectionRow(Component label)) {
+                    gfx.drawString(Minecraft.getInstance().font,
+                            label, getX() + 4, drawY + 6, 0xFFAA00, false);
+                } else if (row instanceof RuleRow r) {
+                    renderRuleRow(gfx, r, drawY, mouseX, mouseY);
+                }
             }
+        } finally {
+            gfx.disableScissor();
         }
-
-        gfx.disableScissor();
 
         if (scrollbarVisible()) {
             int barX = getX() + width - SCROLLBAR_WIDTH;

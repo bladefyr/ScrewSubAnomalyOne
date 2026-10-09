@@ -75,36 +75,39 @@ public final class RuleLoader {
     public record LoadResult(
             Map<String, RemovalRule> activeRules,
             Map<String, RemovalRule> disabledRules,
-            Map<String, RuleSource> sources
+            Map<String, RuleSource> sources,
+            Map<String, JsonObject> rawRules
     ) {}
 
     public static LoadResult loadAll(Path worldRulesDir) {
         Map<String, RemovalRule> active = new HashMap<>();
         Map<String, RemovalRule> disabled = new HashMap<>();
         Map<String, RuleSource> sources = new HashMap<>();
+        Map<String, JsonObject> raws = new HashMap<>();
 
         ensureDirectoryExists(GLOBAL_RULES_DIR);
         writeDefaultsIfMissing(GLOBAL_RULES_DIR);
-        readInto(GLOBAL_RULES_DIR, false, active, disabled, sources);
+        readInto(GLOBAL_RULES_DIR, false, active, disabled, sources, raws);
 
         if (worldRulesDir != null) {
             ensureDirectoryExists(worldRulesDir);
-            readInto(worldRulesDir, true, active, disabled, sources);
+            readInto(worldRulesDir, true, active, disabled, sources, raws);
         }
 
-        return new LoadResult(active, disabled, sources);
+        return new LoadResult(active, disabled, sources, raws);
     }
 
     private static void readInto(Path dir, boolean isWorld,
                                  Map<String, RemovalRule> outActive,
                                  Map<String, RemovalRule> outDisabled,
-                                 Map<String, RuleSource> outSources) {
+                                 Map<String, RuleSource> outSources,
+                                 Map<String, JsonObject> outRaws) {
         try (Stream<Path> paths = Files.list(dir)) {
             paths.filter(p -> p.toString().endsWith(".json"))
                     .filter(Files::isRegularFile)
                     .forEach(path -> {
                         String fileName = path.getFileName().toString();
-                        if (fileName.equals(EXAMPLE_FILE)) return;
+                        if (fileName.equals(EXAMPLE_FILE)) return;   // hide template
 
                         String ruleName = fileName.substring(0, fileName.length() - 5);
                         if (ruleName.isEmpty()) return;
@@ -114,15 +117,17 @@ public final class RuleLoader {
                         if (cleanName.isEmpty()) return;
 
                         try {
-                            RemovalRule rule = parseRule(cleanName, path, isDisabled);
+                            JsonObject raw = readRawObject(path);
+                            if (raw == null) return;
+
+                            RemovalRule rule = parseRule(cleanName, raw, isDisabled);
                             if (rule == null) return;
 
-                            if (isDisabled) {
-                                outDisabled.put(cleanName, rule);
-                            } else {
-                                outActive.put(cleanName, rule);
-                            }
+                            if (isDisabled) outDisabled.put(cleanName, rule);
+                            else outActive.put(cleanName, rule);
+
                             outSources.put(cleanName, new RuleSource(cleanName, path, isWorld));
+                            outRaws.put(cleanName, raw);
                         } catch (Exception e) {
                             DebugLog.log(DebugLog.Channel.RULE_ERROR,
                                     "Failed to parse %s rule '%s': %s",
@@ -134,6 +139,34 @@ public final class RuleLoader {
                     "Failed to list %s rules dir: %s",
                     isWorld ? "world" : "global", e.getMessage());
         }
+    }
+
+    /** Read the raw JSON object from disk, or null if malformed. */
+    private static JsonObject readRawObject(Path path) {
+        try (Reader reader = Files.newBufferedReader(path)) {
+            JsonElement root = JsonParser.parseReader(reader);
+            if (!root.isJsonObject()) return null;
+            return root.getAsJsonObject();
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /** Parse a rule from a pre-read JsonObject. */
+    private static RemovalRule parseRule(String name, JsonObject obj, boolean disabled) {
+        Set<ResourceLocation> entities = new HashSet<>();
+        Set<TagKey<EntityType<?>>> entityTags = new HashSet<>();
+        parseEntityEntries(obj.getAsJsonArray("entities"), name, entities, entityTags);
+
+        Set<ResourceLocation> dimensions = parseIdSet(obj.getAsJsonArray("dimensions"), name, "dimensions");
+
+        if (entities.isEmpty() && entityTags.isEmpty()) {
+            DebugLog.log(DebugLog.Channel.RULE_ERROR,
+                    "Rule '%s' has no entities or tags - skipped.", name);
+            return null;
+        }
+
+        return new RemovalRule(name, entities, entityTags, dimensions, disabled);
     }
 
     private static RemovalRule parseRule(String name, Path path, boolean disabled) throws IOException {
