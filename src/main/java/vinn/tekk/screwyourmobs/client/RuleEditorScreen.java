@@ -9,8 +9,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
+import vinn.tekk.screwyourmobs.network.MutateRulePacket;
+import vinn.tekk.screwyourmobs.network.RequestReloadPacket;
 import vinn.tekk.screwyourmobs.rules.RuleLoader;
 import vinn.tekk.screwyourmobs.rules.RuleManager;
 import vinn.tekk.screwyourmobs.rules.RuleWriter;
@@ -60,6 +63,9 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
     @Override
     protected void init() {
         super.init();
+
+        // Register as a listener so syncs from the server refresh the view
+        RuleManager.addSyncListener(this.syncListener);
 
         int top = 28;
         int bottomBarY = this.height - BOTTOM_BAR_HEIGHT;
@@ -144,13 +150,6 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
 
     @Override
     public void onNewRule() {
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-        if (server == null) return;
-
-        Path worldRulesDir = server.getWorldPath(LevelResource.ROOT)
-                .resolve(RuleLoader.WORLD_RULES_FOLDER);
-
-        // Options = existing rule names (sorted). All are "taken" by definition.
         List<String> existingRules = new java.util.ArrayList<>();
         existingRules.addAll(RuleManager.getRuleNames());
         existingRules.addAll(RuleManager.getDisabledRules().keySet());
@@ -166,12 +165,7 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
                 "",
                 marked,
                 RuleValidators::validateRuleName,
-                name -> {
-                    if (RuleWriter.createRule(name, worldRulesDir)) {
-                        RuleManager.reload();
-                        refreshAll();
-                    }
-                }
+                name -> mutate(MutateRulePacket.Operation.CREATE, "", name)
         );
     }
 
@@ -182,10 +176,9 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
         Minecraft.getInstance().setScreen(new ConfirmScreen(
                 confirmed -> {
                     if (confirmed) {
-                        RuleManager.deleteRule(selected.name());
-                        RuleManager.reload();
+                        mutate(MutateRulePacket.Operation.DELETE, selected.name(), "");
                     }
-                    Minecraft.getInstance().setScreen(new RuleEditorScreen(parent));
+                    Minecraft.getInstance().setScreen(this);
                 },
                 Component.translatable("screwyourmobs.screen.delete.title"),
                 Component.translatable("screwyourmobs.screen.delete.message", selected.name())
@@ -195,19 +188,23 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
     private void onToggle() {
         var selected = ruleList.getSelectedKey();
         if (selected == null) return;
-
-        if (RuleManager.toggleDisabled(selected.name())) {
-            RuleManager.reload();
-            ruleList.refresh();
-            updateButtons();
-        }
+        mutate(MutateRulePacket.Operation.TOGGLE_DISABLED, selected.name(), "");
     }
 
     private void onReload() {
-        RuleManager.reload();
-        ruleList.refresh();
-        ruleDetail.setRule(ruleList.getSelectedKey());
-        updateButtons();
+        if (isLocalServer()) {
+            RuleManager.reload();
+            ruleList.refresh();
+            ruleDetail.setRule(ruleList.getSelectedKey());
+            updateButtons();
+        } else {
+            PacketDistributor.sendToServer(RequestReloadPacket.INSTANCE);
+            // Optional: brief chat confirmation so the user knows it's coming
+            if (Minecraft.getInstance().player != null) {
+                Minecraft.getInstance().player.displayClientMessage(
+                        Component.literal("§7Reloading rules on server..."), true);
+            }
+        }
     }
 
     // ---- RuleDetailWidget.Callbacks ----
@@ -221,12 +218,7 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
                 RuleValidators.entityOptions(),
                 "",
                 RuleValidators::validateEntity,
-                value -> {
-                    if (RuleWriter.addEntity(ruleName, value)) {
-                        RuleManager.reload();
-                        refreshAll();
-                    }
-                }
+                value -> mutate(MutateRulePacket.Operation.ADD_ENTITY, ruleName, value)
         );
     }
 
@@ -239,12 +231,7 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
                 RuleValidators.dimensionOptions(),
                 "",
                 RuleValidators::validateDimension,
-                value -> {
-                    if (RuleWriter.addDimension(ruleName, value)) {
-                        RuleManager.reload();
-                        refreshAll();
-                    }
-                }
+                value -> mutate(MutateRulePacket.Operation.ADD_DIMENSION, ruleName, value)
         );
     }
 
@@ -253,10 +240,7 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
         Minecraft.getInstance().setScreen(new ConfirmScreen(
                 confirmed -> {
                     if (confirmed) {
-                        if (RuleWriter.removeEntity(ruleName, entityId)) {
-                            RuleManager.reload();
-                            refreshAll();
-                        }
+                        mutate(MutateRulePacket.Operation.REMOVE_ENTITY, ruleName, entityId);
                     }
                     Minecraft.getInstance().setScreen(this);
                 },
@@ -271,10 +255,7 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
         Minecraft.getInstance().setScreen(new ConfirmScreen(
                 confirmed -> {
                     if (confirmed) {
-                        if (RuleWriter.removeDimension(ruleName, dimensionId)) {
-                            RuleManager.reload();
-                            refreshAll();
-                        }
+                        mutate(MutateRulePacket.Operation.REMOVE_DIMENSION, ruleName, dimensionId);
                     }
                     Minecraft.getInstance().setScreen(this);
                 },
@@ -286,14 +267,13 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
 
     @Override
     public void onRename(String ruleName) {
-        // Exclude the rule's own name from the "taken" set
         List<String> existingRules = new java.util.ArrayList<>();
         existingRules.addAll(RuleManager.getRuleNames());
         existingRules.addAll(RuleManager.getDisabledRules().keySet());
         existingRules.sort(String::compareToIgnoreCase);
 
         java.util.Set<String> marked = new java.util.HashSet<>(existingRules);
-        marked.remove(ruleName);   // renaming a rule to itself isn't a collision
+        marked.remove(ruleName);
 
         InputFlow.prompt(
                 Minecraft.getInstance(),
@@ -303,13 +283,37 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
                 ruleName,
                 marked,
                 RuleValidators::validateRuleName,
-                newName -> {
-                    if (RuleWriter.renameRule(ruleName, newName)) {
-                        RuleManager.reload();
-                        refreshAll();
-                    }
-                }
+                newName -> mutate(MutateRulePacket.Operation.RENAME, ruleName, newName)
         );
+    }
+
+    private void mutate(MutateRulePacket.Operation op, String ruleName, String payload) {
+        if (isLocalServer()) {
+            // Local: run the mutation directly
+            boolean ok = switch (op) {
+                case ADD_ENTITY -> RuleWriter.addEntity(ruleName, payload);
+                case REMOVE_ENTITY -> RuleWriter.removeEntity(ruleName, payload);
+                case ADD_DIMENSION -> RuleWriter.addDimension(ruleName, payload);
+                case REMOVE_DIMENSION -> RuleWriter.removeDimension(ruleName, payload);
+                case RENAME -> RuleWriter.renameRule(ruleName, payload);
+                case DELETE -> RuleManager.deleteRule(ruleName);
+                case TOGGLE_DISABLED -> RuleManager.toggleDisabled(ruleName);
+                case CREATE -> {
+                    MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+                    if (server == null) yield false;
+                    Path worldRulesDir = server.getWorldPath(LevelResource.ROOT)
+                            .resolve(RuleLoader.WORLD_RULES_FOLDER);
+                    yield RuleWriter.createRule(payload, worldRulesDir);
+                }
+            };
+            if (ok) {
+                RuleManager.reload();
+                refreshAll();
+            }
+        } else {
+            // Remote: ask the server, it'll broadcast a sync back
+            PacketDistributor.sendToServer(new MutateRulePacket(op, ruleName, payload));
+        }
     }
 
     // ---- Refresh ----
@@ -342,9 +346,20 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
                 0xFFAA00, true);
     }
 
+    private final Runnable syncListener = () -> {
+        // Syncs can arrive on the netty thread — hop to the main thread
+        Minecraft.getInstance().execute(this::refreshAll);
+    };
+
     @Override
     public void onClose() {
+        RuleManager.removeSyncListener(this.syncListener);
         Minecraft.getInstance().setScreen(parent);
+    }
+
+    /** @return true if we're hosting the server (singleplayer / LAN host). */
+    private boolean isLocalServer() {
+        return Minecraft.getInstance().hasSingleplayerServer();
     }
 
     @Override

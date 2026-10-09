@@ -1,42 +1,37 @@
 package vinn.tekk.screwyourmobs.rules;
 
-import com.google.gson.JsonObject;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
- * Wire-friendly snapshot of every loaded rule. Serializes to NBT for
- * transmission over a CustomPacketPayload.
- *
- * Includes active rules, disabled rules, and per-rule metadata (source
- * display path + world-rule flag). Does not include the raw JsonObject —
- * the client only needs the display data, not the file bytes.
+ * Wire-friendly snapshot of every loaded rule plus the current dimension list
+ * and the server's validation warnings.
+ * Serializes to NBT for transmission over a CustomPacketPayload.
  */
-public final class RuleSetSnapshot {
+public record RuleSetSnapshot(
+        List<RuleEntry> rules,
+        List<String> knownDimensions,
+        List<String> warnings
+) {
 
     public record RuleEntry(
             String name,
             boolean disabled,
             boolean isWorldRule,
             String displayPath,
-            List<String> entities,       // already-stringified IDs, including #tags
-            List<String> dimensions      // already-stringified dimension IDs
-    ) {}
-
-    public final List<RuleEntry> rules;
-
-    public RuleSetSnapshot(List<RuleEntry> rules) {
-        this.rules = rules;
+            List<String> entities,
+            List<String> dimensions
+    ) {
     }
 
     // ---- Server side: capture current state ----
@@ -44,17 +39,23 @@ public final class RuleSetSnapshot {
     public static RuleSetSnapshot capture() {
         List<RuleEntry> out = new ArrayList<>();
 
-        // Active rules
         for (RemovalRule rule : RuleManager.getAllRules().values()) {
             out.add(entryFor(rule, RuleManager.getSource(rule.name())));
         }
-
-        // Disabled rules
         for (RemovalRule rule : RuleManager.getDisabledRules().values()) {
             out.add(entryFor(rule, RuleManager.getSource(rule.name())));
         }
 
-        return new RuleSetSnapshot(out);
+        List<String> dims = new ArrayList<>();
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server != null) {
+            server.levelKeys().forEach(key -> dims.add(key.location().toString()));
+        }
+        dims.sort(String::compareToIgnoreCase);
+
+        List<String> warnings = new ArrayList<>(RuleManager.getLastWarnings());
+
+        return new RuleSetSnapshot(out, dims, warnings);
     }
 
     private static RuleEntry entryFor(RemovalRule rule, RuleSource source) {
@@ -105,6 +106,15 @@ public final class RuleSetSnapshot {
         }
 
         root.put("rules", list);
+
+        ListTag dims = new ListTag();
+        for (String d : knownDimensions) dims.add(StringTag.valueOf(d));
+        root.put("knownDimensions", dims);
+
+        ListTag warnList = new ListTag();
+        for (String w : warnings) warnList.add(StringTag.valueOf(w));
+        root.put("warnings", warnList);
+
         return root;
     }
 
@@ -137,6 +147,18 @@ public final class RuleSetSnapshot {
             ));
         }
 
-        return new RuleSetSnapshot(out);
+        List<String> knownDims = new ArrayList<>();
+        ListTag knownDimTag = root.getList("knownDimensions", Tag.TAG_STRING);
+        for (int i = 0; i < knownDimTag.size(); i++) {
+            knownDims.add(knownDimTag.getString(i));
+        }
+
+        List<String> warnings = new ArrayList<>();
+        ListTag warnTag = root.getList("warnings", Tag.TAG_STRING);
+        for (int i = 0; i < warnTag.size(); i++) {
+            warnings.add(warnTag.getString(i));
+        }
+
+        return new RuleSetSnapshot(out, knownDims, warnings);
     }
 }

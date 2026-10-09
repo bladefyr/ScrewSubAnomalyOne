@@ -14,12 +14,15 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
 import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
 import vinn.tekk.screwyourmobs.debug.DebugLog;
+import vinn.tekk.screwyourmobs.network.SyncRulesPacket;
 import vinn.tekk.screwyourmobs.procedures.EntityPurger;
 import vinn.tekk.screwyourmobs.rules.RemovalRule;
 import vinn.tekk.screwyourmobs.rules.RuleManager;
+import vinn.tekk.screwyourmobs.rules.RuleSetSnapshot;
 
 import java.util.List;
 import java.util.Map;
@@ -101,6 +104,9 @@ public class EntityRemovalCommands {
                 DebugLog.chatOnly(ctx.getSource(), DebugLog.Channel.VALIDATE, "%s", w);
             }
         }
+        // Broadcast to all connected clients
+        PacketDistributor.sendToAllPlayers(SyncRulesPacket.of(RuleSetSnapshot.capture()));
+
         return 1;
     }
 

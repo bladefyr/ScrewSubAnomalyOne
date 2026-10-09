@@ -1,11 +1,7 @@
 package vinn.tekk.screwyourmobs.client;
 
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import vinn.tekk.screwyourmobs.helpers.Levenshtein;
 import vinn.tekk.screwyourmobs.rules.RuleManager;
 
@@ -39,23 +35,18 @@ public final class RuleValidators {
         return options;
     }
 
-    /** All currently-loaded dimension IDs. */
+    /**
+     * Dimension IDs. Sourced from the sync snapshot on remote clients,
+     * and from the local server on integrated servers.
+     */
     public static List<String> dimensionOptions() {
-        List<String> options = new ArrayList<>();
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-        if (server != null) {
-            server.levelKeys().forEach(key -> options.add(key.location().toString()));
-        }
+        List<String> options = new ArrayList<>(RuleManager.getKnownDimensions());
         options.sort(String::compareToIgnoreCase);
         return options;
     }
 
     // ---- Validators ----
 
-    /**
-     * Validates an entity ID or an entity tag. Accepts either
-     * "namespace:id" or "#namespace:tag".
-     */
     public static InputFlow.ValidationResult validateEntity(String input) {
         if (input == null || input.isEmpty()) {
             return InputFlow.ValidationResult.bad(null);
@@ -86,7 +77,7 @@ public final class RuleValidators {
         return InputFlow.ValidationResult.bad(suggestClosestEntity(rl));
     }
 
-    /** Validates a dimension ID against the currently-loaded dimensions. */
+    /** Validates a dimension ID against the synced dimension list. */
     public static InputFlow.ValidationResult validateDimension(String input) {
         if (input == null || input.isEmpty()) {
             return InputFlow.ValidationResult.bad(null);
@@ -97,30 +88,33 @@ public final class RuleValidators {
             return InputFlow.ValidationResult.bad(null);
         }
 
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-        if (server == null) {
-            return InputFlow.ValidationResult.bad(null);
+        String inputStr = rl.toString();
+        List<String> known = RuleManager.getKnownDimensions();
+
+        if (known.contains(inputStr)) {
+            return InputFlow.ValidationResult.ok();
         }
 
-        boolean exists = server.levelKeys().stream()
-                .anyMatch(key -> key.location().equals(rl));
+        String best = null;
+        int bestDist = Integer.MAX_VALUE;
+        for (String candidate : known) {
+            int dist = Levenshtein.distance(inputStr, candidate);
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = candidate;
+            }
+        }
 
-        if (exists) return InputFlow.ValidationResult.ok();
-
-        return InputFlow.ValidationResult.bad(suggestClosestDimension(rl, server));
+        return InputFlow.ValidationResult.bad(
+                (best != null && bestDist <= MAX_SUGGESTION_DISTANCE) ? best : null);
     }
 
-    /**
-     * Validates a new rule name. Rejects empty, non-alphanumeric names,
-     * and names that already exist (suggesting name_2, name_3, ...).
-     */
     public static InputFlow.ValidationResult validateRuleName(String input) {
         if (input == null || input.isEmpty()) {
             return InputFlow.ValidationResult.bad(null);
         }
 
         if (input.startsWith("_")) {
-            // Leading underscore means "disabled" on disk; reject to avoid confusion
             return InputFlow.ValidationResult.bad(null);
         }
 
@@ -128,7 +122,6 @@ public final class RuleValidators {
             return InputFlow.ValidationResult.bad(null);
         }
 
-        // Check for name collision
         if (RuleManager.getRuleNames().contains(input)
                 || RuleManager.getDisabledRules().containsKey(input)) {
             return InputFlow.ValidationResult.bad(suggestUniqueName(input));
@@ -164,23 +157,6 @@ public final class RuleValidators {
         while (iter.hasNext()) {
             var pair = iter.next();
             String candidate = pair.getFirst().location().toString();
-            int dist = Levenshtein.distance(target, candidate);
-            if (dist < bestDist) {
-                bestDist = dist;
-                best = candidate;
-            }
-        }
-
-        return (best != null && bestDist <= MAX_SUGGESTION_DISTANCE) ? best : null;
-    }
-
-    private static String suggestClosestDimension(ResourceLocation unknown, MinecraftServer server) {
-        String target = unknown.toString();
-        String best = null;
-        int bestDist = Integer.MAX_VALUE;
-
-        for (ResourceKey<Level> key : server.levelKeys()) {
-            String candidate = key.location().toString();
             int dist = Levenshtein.distance(target, candidate);
             if (dist < bestDist) {
                 bestDist = dist;
