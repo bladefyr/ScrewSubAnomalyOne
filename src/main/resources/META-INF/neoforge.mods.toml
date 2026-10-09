@@ -9,7 +9,7 @@ displayName="ScrewYourMobs!"
 displayURL="https://modrinth.com/user/vinntekk"
 logoFile="logo.png"
 authors="vinntekk"
-description="Remove any mob, anywhere, with simple JSON rules. Filter by ID or tag, per-dimension, global or per-world. Built-in editor, debug tools, and typo detection."
+description="Remove any mob, anywhere, with simple JSON rules. Filter by ID or tag, per-dimension, global or per-world. Built-in editor, debug tools, and typo detection! Type '/sym' in chat to start."
 
 # Start of user code block mod configuration
 # End of user code block mod configuration
