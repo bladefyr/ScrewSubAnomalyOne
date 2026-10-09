@@ -22,8 +22,6 @@ public class RuleDetailWidget extends AbstractWidget {
     private static final int SCROLLBAR_WIDTH = 6;
     private static final int ACTION_ZONE_WIDTH = 80;
 
-    // ---- Callback interface ----
-
     public interface Callbacks {
         void onNewRule();
 
@@ -34,13 +32,10 @@ public class RuleDetailWidget extends AbstractWidget {
         void onRename(String ruleName);
     }
 
-    // ---- Row model ----
-
-    /** What happens when the action zone of an ActionRow is clicked. */
     private enum ActionType { RENAME, REMOVE_ENTITY, REMOVE_DIMENSION }
 
-    /** What happens when an AddRow is clicked. */
     private enum AddType { ENTITY, DIMENSION }
+
 
     private sealed interface Line permits Text, Header, Spacer, ActionRow, AddRow {}
     private record Text(Component text, int color) implements Line {}
@@ -49,8 +44,6 @@ public class RuleDetailWidget extends AbstractWidget {
     private record ActionRow(Component content, Component action,
                              ActionType actionType, String payload) implements Line {}
     private record AddRow(Component label, AddType addType) implements Line {}
-
-    // ---- State ----
 
     private final List<Line> lines = new ArrayList<>();
     private double scrollOffset = 0;
@@ -68,7 +61,6 @@ public class RuleDetailWidget extends AbstractWidget {
         rebuild(key);
     }
 
-    // ---- Building the line list ----
 
     private void rebuild(RuleListWidget.RuleKey key) {
         this.currentKey = key;
@@ -198,7 +190,6 @@ public class RuleDetailWidget extends AbstractWidget {
         }
     }
 
-    /** @return the row index under the given Y coordinate, or -1 if outside. */
     private int rowIndexAt(double my) {
         if (!isMouseOver(getX(), my)) return -1;
         int visibleTop = (int) scrollOffset;
@@ -207,7 +198,6 @@ public class RuleDetailWidget extends AbstractWidget {
         return (index >= 0 && index < lines.size()) ? index : -1;
     }
 
-    /** @return true if the mouse X is in the right-edge action zone. */
     private boolean isInActionZone(double mx) {
         return mx >= getX() + width - ACTION_ZONE_WIDTH - SCROLLBAR_WIDTH;
     }
@@ -247,7 +237,7 @@ public class RuleDetailWidget extends AbstractWidget {
                                     getX() + 4, drawY + 1, contentWidth,
                                     0xFFAA00, rowHovered);
 
-                    case Spacer() -> { /* nothing */ }
+                    case Spacer() -> { /* no-op */ }
 
                     case ActionRow(Component content, Component action,
                                    ActionType actionType, String payload) -> {
@@ -256,13 +246,11 @@ public class RuleDetailWidget extends AbstractWidget {
                         int actionX = getX() + width - SCROLLBAR_WIDTH - 4 - actionWidth;
                         int actionY = drawY + 1;
 
-                        // Content on the left (marquee if too long)
                         int contentMaxWidth = actionX - (getX() + 4) - 4;
                         MarqueeText.draw(gfx, content,
                                 getX() + 4, drawY + 1, contentMaxWidth,
                                 0xFFFFFF, rowHovered);
 
-                        // Action zone highlight
                         boolean actionHovered = rowHovered && hoveredActionZone;
                         if (actionHovered) {
                             int pad = 2;
@@ -274,7 +262,6 @@ public class RuleDetailWidget extends AbstractWidget {
                                     bgColor);
                         }
 
-                        // Action text
                         int actionColor;
                         if (actionType == ActionType.RENAME) {
                             actionColor = actionHovered ? 0xFFFFAA00 : 0xFFFFFF88;
@@ -286,7 +273,6 @@ public class RuleDetailWidget extends AbstractWidget {
 
                     case AddRow(Component label, AddType addType) -> {
                         if (rowHovered) {
-                            // Faint green bar behind the whole row
                             gfx.fill(getX(), drawY, getX() + width - SCROLLBAR_WIDTH,
                                     drawY + ROW_HEIGHT, 0x3055FF55);
                         }

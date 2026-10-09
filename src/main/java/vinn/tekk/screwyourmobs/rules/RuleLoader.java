@@ -107,7 +107,7 @@ public final class RuleLoader {
                     .filter(Files::isRegularFile)
                     .forEach(path -> {
                         String fileName = path.getFileName().toString();
-                        if (fileName.equals(EXAMPLE_FILE)) return;   // hide template
+                        if (fileName.equals(EXAMPLE_FILE)) return;
 
                         String ruleName = fileName.substring(0, fileName.length() - 5);
                         if (ruleName.isEmpty()) return;
@@ -141,7 +141,6 @@ public final class RuleLoader {
         }
     }
 
-    /** Read the raw JSON object from disk, or null if malformed. */
     private static JsonObject readRawObject(Path path) {
         try (Reader reader = Files.newBufferedReader(path)) {
             JsonElement root = JsonParser.parseReader(reader);
@@ -152,16 +151,13 @@ public final class RuleLoader {
         }
     }
 
-    /** Parse a rule from a pre-read JsonObject. */
     private static RemovalRule parseRule(String name, JsonObject obj, boolean disabled) {
         Set<ResourceLocation> entities = new HashSet<>();
         Set<TagKey<EntityType<?>>> entityTags = new HashSet<>();
         parseEntityEntries(obj.getAsJsonArray("entities"), name, entities, entityTags);
 
         Set<ResourceLocation> dimensions = parseIdSet(obj.getAsJsonArray("dimensions"), name, "dimensions");
-
-        // No more "has no entities or tags - skipped" check.
-        // Empty rules are valid — they're just containers waiting to be filled.
+        
         return new RemovalRule(name, entities, entityTags, dimensions, disabled);
     }
 

@@ -34,7 +34,7 @@ public class ScrewYourMobsMod {
             container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         }
 
-        LOGGER.info("ScrewYourMobs! initialized.");
+        LOGGER.info("[ScrewYourMobs!] HELLO!!! (Mod initialized)");
     }
 
     private void onConfigLoading(ModConfigEvent.Loading event) {

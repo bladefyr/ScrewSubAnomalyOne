@@ -13,11 +13,6 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Wire-friendly snapshot of every loaded rule plus the current dimension list
- * and the server's validation warnings.
- * Serializes to NBT for transmission over a CustomPacketPayload.
- */
 public record RuleSetSnapshot(
         List<RuleEntry> rules,
         List<String> knownDimensions,

@@ -1,6 +1,5 @@
 package vinn.tekk.screwyourmobs.network;
 
-import io.netty.buffer.ByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -18,10 +17,6 @@ import vinn.tekk.screwyourmobs.rules.RuleWriter;
 
 import java.nio.file.Path;
 
-/**
- * Client → Server. Requests a single rule mutation. Server validates,
- * runs it, then broadcasts a fresh SyncRulesPacket to all connected players.
- */
 public record MutateRulePacket(Operation op, String ruleName, String payload)
         implements CustomPacketPayload {
 
@@ -61,7 +56,6 @@ public record MutateRulePacket(Operation op, String ruleName, String payload)
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
 
-            // Same permission gate as /sym — OP level 2
             if (!player.hasPermissions(2)) {
                 ScrewYourMobsMod.LOGGER.warn(
                         "[ScrewYourMobs!] Player {} tried to mutate rule '{}' without permission.",
@@ -72,10 +66,8 @@ public record MutateRulePacket(Operation op, String ruleName, String payload)
             boolean ok = applyMutation(packet, player);
 
             if (ok) {
-                // Reload the server-side rules from disk
                 RuleManager.reload();
 
-                // Broadcast the new state to every connected client
                 PacketDistributor.sendToAllPlayers(
                         SyncRulesPacket.of(RuleSetSnapshot.capture()));
             } else {

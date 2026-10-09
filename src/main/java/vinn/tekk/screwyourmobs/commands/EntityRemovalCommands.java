@@ -104,7 +104,6 @@ public class EntityRemovalCommands {
                 DebugLog.chatOnly(ctx.getSource(), DebugLog.Channel.VALIDATE, "%s", w);
             }
         }
-        // Broadcast to all connected clients
         PacketDistributor.sendToAllPlayers(SyncRulesPacket.of(RuleSetSnapshot.capture()));
 
         return 1;

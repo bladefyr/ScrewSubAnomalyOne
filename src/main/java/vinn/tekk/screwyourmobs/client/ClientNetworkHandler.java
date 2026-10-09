@@ -1,7 +1,5 @@
 package vinn.tekk.screwyourmobs.client;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -17,19 +15,17 @@ public class ClientNetworkHandler {
 
     @SubscribeEvent
     public static void onLogin(ClientPlayerNetworkEvent.LoggingIn event) {
-        // Ask the server to send us the rule set on join
         PacketDistributor.sendToServer(RequestSyncPacket.INSTANCE);
 
-        ScrewYourMobsMod.LOGGER.info(
-                "[ScrewYourMobs!] Client joined — requested rule sync.");
+        ScrewYourMobsMod.LOGGER.debug(
+                "[ScrewYourMobs!] Client joined - requested rule sync.");
     }
 
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
-        // Clear the client cache so we don't show stale rules next connection
         RuleManager.clearClientCache();
 
-        ScrewYourMobsMod.LOGGER.info(
-                "[ScrewYourMobs!] Client disconnected — cleared rule cache.");
+        ScrewYourMobsMod.LOGGER.debug(
+                "[ScrewYourMobs!] Client disconnected - cleared rule cache.");
     }
 }

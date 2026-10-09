@@ -64,7 +64,6 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
     protected void init() {
         super.init();
 
-        // Register as a listener so syncs from the server refresh the view
         RuleManager.addSyncListener(this.syncListener);
 
         int top = 28;
@@ -85,11 +84,9 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
         addRenderableWidget(this.ruleList);
         addRenderableWidget(this.ruleDetail);
 
-        // Bottom bar
         int buttonY = this.height - 24;
         int cx = PADDING;
 
-        // [+ New Rule]
         addRenderableWidget(Button.builder(
                         Component.translatable("screwyourmobs.screen.button.new_rule"),
                         b -> onNewRule())
@@ -115,7 +112,6 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
                         b -> onReload())
                 .bounds(cx, buttonY, 70, 20).build());
 
-        // Done — right aligned
         addRenderableWidget(Button.builder(
                         Component.translatable("gui.done"),
                         b -> onClose())
@@ -199,7 +195,6 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
             updateButtons();
         } else {
             PacketDistributor.sendToServer(RequestReloadPacket.INSTANCE);
-            // Optional: brief chat confirmation so the user knows it's coming
             if (Minecraft.getInstance().player != null) {
                 Minecraft.getInstance().player.displayClientMessage(
                         Component.literal("§7Reloading rules on server..."), true);
@@ -289,7 +284,6 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
 
     private void mutate(MutateRulePacket.Operation op, String ruleName, String payload) {
         if (isLocalServer()) {
-            // Local: run the mutation directly
             boolean ok = switch (op) {
                 case ADD_ENTITY -> RuleWriter.addEntity(ruleName, payload);
                 case REMOVE_ENTITY -> RuleWriter.removeEntity(ruleName, payload);
@@ -311,7 +305,6 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
                 refreshAll();
             }
         } else {
-            // Remote: ask the server, it'll broadcast a sync back
             PacketDistributor.sendToServer(new MutateRulePacket(op, ruleName, payload));
         }
     }
@@ -319,12 +312,10 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
     // ---- Refresh ----
 
     private void refreshAll() {
-        // Preserve selection by name across the refresh
         var previous = ruleList.getSelectedKey();
         ruleList.refresh();
 
         if (previous != null) {
-            // Try to reselect the same rule (by name, either scope)
             ruleList.selectByName(previous.name(), previous.isWorld());
         }
 
@@ -347,7 +338,6 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
     }
 
     private final Runnable syncListener = () -> {
-        // Syncs can arrive on the netty thread — hop to the main thread
         Minecraft.getInstance().execute(this::refreshAll);
     };
 
@@ -357,7 +347,6 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
         Minecraft.getInstance().setScreen(parent);
     }
 
-    /** @return true if we're hosting the server (singleplayer / LAN host). */
     private boolean isLocalServer() {
         return Minecraft.getInstance().hasSingleplayerServer();
     }

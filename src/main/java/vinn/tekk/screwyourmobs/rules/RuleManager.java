@@ -16,13 +16,7 @@ import vinn.tekk.screwyourmobs.debug.DebugLog;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class RuleManager {
@@ -72,7 +66,6 @@ public final class RuleManager {
         DISABLED_RULES = Collections.unmodifiableMap(result.disabledRules());
         RULE_SOURCES = Collections.unmodifiableMap(result.sources());
 
-        // Validate — only active rules
         if (server != null && EntityRemovalConfig.RULES_VALIDATE_ON_LOAD.get()) {
             LAST_WARNINGS = RuleValidator.validate(loaded, knownDimensions);
             for (String warning : LAST_WARNINGS) {
@@ -82,7 +75,6 @@ public final class RuleManager {
             LAST_WARNINGS = List.of();
         }
 
-        // Collect dimension IDs for the picker (synced to clients via RuleSetSnapshot)
         List<String> dims = new ArrayList<>();
         if (server != null) {
             server.levelKeys().forEach(key -> dims.add(key.location().toString()));
@@ -164,15 +156,10 @@ public final class RuleManager {
         return r != null ? r : DISABLED_RULES.get(name);
     }
 
-    /** @return true if the rule is currently disabled. */
     public static boolean isDisabled(String name) {
         return DISABLED_RULES.containsKey(name);
     }
 
-    /**
-     * Rename the rule file, adding/removing the "_" prefix.
-     * Caller is responsible for calling reload() afterward.
-     */
     public static boolean toggleDisabled(String name) {
         RuleSource source = RULE_SOURCES.get(name);
         if (source == null) return false;
@@ -197,10 +184,6 @@ public final class RuleManager {
         }
     }
 
-    /**
-     * Client-side: replace the local cache with a snapshot received from the server.
-     * Rebuilds indexes so the editor and validation both see consistent state.
-     */
     public static void applySync(RuleSetSnapshot snapshot) {
         Map<String, RemovalRule> active = new HashMap<>();
         Map<String, RemovalRule> disabled = new HashMap<>();
@@ -231,7 +214,6 @@ public final class RuleManager {
             if (e.disabled()) disabled.put(e.name(), rule);
             else active.put(e.name(), rule);
 
-            // Synthesize a RuleSource with the display path but no real file
             sources.put(e.name(), new RuleSource(
                     e.name(),
                     java.nio.file.Path.of(e.displayPath()),
@@ -241,17 +223,15 @@ public final class RuleManager {
         RULES = Collections.unmodifiableMap(active);
         DISABLED_RULES = Collections.unmodifiableMap(disabled);
         RULE_SOURCES = Collections.unmodifiableMap(sources);
-        RAW_RULES = Map.of();   // raw JSON isn't synced — the client can't write files anyway
+        RAW_RULES = Map.of();
         LAST_WARNINGS = List.copyOf(snapshot.warnings());
 
-        // Dimensions come over the wire too — used by the dimension picker
         List<String> syncedDims = new ArrayList<>(snapshot.knownDimensions());
         syncedDims.sort(String::compareToIgnoreCase);
         KNOWN_DIMENSIONS = Collections.unmodifiableList(syncedDims);
 
         rebuildIndexes(active);
 
-        // Notify any UI listeners (e.g. an open RuleEditorScreen) that the state changed
         for (Runnable listener : SYNC_LISTENERS) {
             try {
                 listener.run();
@@ -262,7 +242,6 @@ public final class RuleManager {
         }
     }
 
-    /** Rebuild the indexes from a rule map. Extracted from reload() so applySync() can reuse it. */
     private static void rebuildIndexes(Map<String, RemovalRule> loaded) {
         Map<ResourceLocation, List<RemovalRule>> global = new HashMap<>();
         Map<ResourceLocation, Map<ResourceLocation, List<RemovalRule>>> perDim = new HashMap<>();
@@ -327,7 +306,6 @@ public final class RuleManager {
         totalEntityEntries = entityCount;
     }
 
-    /** Delete the rule file. Caller is responsible for calling reload() afterward. */
     public static boolean deleteRule(String name) {
         RuleSource source = RULE_SOURCES.get(name);
         if (source == null) return false;
@@ -342,7 +320,6 @@ public final class RuleManager {
         }
     }
 
-    /** Clear all caches. Called on client disconnect so we don't show stale data. */
     public static void clearClientCache() {
         RULES = Map.of();
         RAW_RULES = Map.of();

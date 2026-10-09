@@ -20,7 +20,6 @@ public final class Levenshtein {
         if (n == 0) return m;
         if (m == 0) return n;
 
-        // Two-row rolling array - keep the shorter side on the inner loop for cache friendliness
         if (n > m) {
             String tmp = a; a = b; b = tmp;
             int t = n; n = m; m = t;

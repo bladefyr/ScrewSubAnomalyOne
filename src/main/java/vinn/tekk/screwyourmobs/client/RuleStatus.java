@@ -1,7 +1,7 @@
 package vinn.tekk.screwyourmobs.client;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 public enum RuleStatus {
     GOOD("good", "screwyourmobs.screen.status.good"),

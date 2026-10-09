@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-/**
- * Orchestrates the prompt → validate → correct → callback loop.
- */
 public final class InputFlow {
 
     private InputFlow() {}

@@ -13,14 +13,12 @@ public class NetworkHandler {
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
 
-        // Server → client
         registrar.playToClient(
                 SyncRulesPacket.TYPE,
                 SyncRulesPacket.STREAM_CODEC,
                 SyncRulesPacket::handle
         );
 
-        // Client → server
         registrar.playToServer(
                 RequestSyncPacket.TYPE,
                 RequestSyncPacket.STREAM_CODEC,

@@ -1,16 +1,7 @@
 package vinn.tekk.screwyourmobs.rules;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.entity.EntityType;
+import com.google.gson.*;
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
-import vinn.tekk.screwyourmobs.debug.DebugLog;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -103,10 +94,6 @@ public final class RuleWriter {
 
     // ---- Internal ----
 
-    /**
-     * Load the raw JSON for {@code ruleName}, mutate the given array via {@code editor},
-     * and write back if the array changed. Returns true on success (or no-op).
-     */
     private static boolean mutateArray(String ruleName, String arrayField,
                                        java.util.function.Function<JsonArray, Boolean> editor) {
         RuleSource source = RuleManager.getSource(ruleName);
@@ -122,7 +109,7 @@ public final class RuleWriter {
         }
 
         Boolean changed = editor.apply(arr);
-        if (!Boolean.TRUE.equals(changed)) return true; // no-op, not a failure
+        if (!Boolean.TRUE.equals(changed)) return true;
 
         return writeJson(source.path(), raw);
     }
@@ -139,14 +126,9 @@ public final class RuleWriter {
         }
     }
 
-    /**
-     * Write {@code obj} to {@code target} using a temp file + atomic move.
-     * Verifies the serialized JSON is re-parseable before writing.
-     */
     private static boolean writeJson(Path target, JsonObject obj) {
         String serialized = GSON.toJson(obj);
 
-        // Sanity check. If we can't parse our own output, don't write
         try {
             JsonParser.parseString(serialized);
         } catch (Exception e) {

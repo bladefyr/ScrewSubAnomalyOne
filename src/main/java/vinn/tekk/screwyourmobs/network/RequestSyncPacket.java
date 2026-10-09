@@ -10,10 +10,6 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
 import vinn.tekk.screwyourmobs.rules.RuleSetSnapshot;
 
-/**
- * Client → Server. Asks the server to send a fresh SyncRulesPacket.
- * Fired on player join and after any client-side action that expects a refresh.
- */
 public record RequestSyncPacket() implements CustomPacketPayload {
 
     public static final Type<RequestSyncPacket> TYPE = new Type<>(
@@ -35,7 +31,6 @@ public record RequestSyncPacket() implements CustomPacketPayload {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
 
-            // Reply only to the requester with a fresh snapshot
             PacketDistributor.sendToPlayer(player,
                     SyncRulesPacket.of(RuleSetSnapshot.capture()));
         });

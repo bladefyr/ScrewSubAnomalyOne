@@ -12,7 +12,7 @@ public class CorrectionScreen extends Screen {
     public enum Result { ACCEPT_SUGGESTION, EDIT, CANCEL }
 
     private final String originalInput;
-    private final String suggestion;   // nullable — no suggestion available
+    private final String suggestion;
     private final Consumer<Result> callback;
 
     public CorrectionScreen(Screen parent,
@@ -66,19 +66,16 @@ public class CorrectionScreen extends Screen {
 
         int centerY = this.height / 2;
 
-        // Header — "X isn't valid"
         gfx.drawString(this.font, this.title,
                 (this.width - this.font.width(this.title)) / 2,
                 centerY - 40, 0xFF5555, true);
 
-        // The invalid input, in quotes
         Component invalidLine = Component.translatable(
                 "screwyourmobs.screen.correction.invalid", originalInput);
         gfx.drawString(this.font, invalidLine,
                 (this.width - this.font.width(invalidLine)) / 2,
                 centerY - 22, 0xFFFFFF, false);
 
-        // The suggestion, if we have one
         if (suggestion != null) {
             Component suggestLine = Component.translatable(
                     "screwyourmobs.screen.correction.suggest", suggestion);

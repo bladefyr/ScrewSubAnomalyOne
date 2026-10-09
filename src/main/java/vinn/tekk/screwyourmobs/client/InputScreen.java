@@ -103,10 +103,6 @@ public class InputScreen extends Screen {
         super.mouseMoved(mx, my);
     }
 
-    /**
-     * @return the index in {@link #suggestions} under the mouse cursor,
-     *         or -1 if the mouse isn't over a valid row.
-     */
     private int hoveredIndex() {
         if (lastMouseX < 0 || lastMouseY < 0) return -1;
 
@@ -130,7 +126,6 @@ public class InputScreen extends Screen {
     private void onInputChanged(String value) {
         if (suppressResponder) return;
 
-        // User typed — unfreeze the cycle
         frozenSuggestions = null;
         cycleIndex = -1;
 
@@ -251,7 +246,6 @@ public class InputScreen extends Screen {
                  GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL,
                  GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT,
                  GLFW.GLFW_KEY_LEFT_SUPER, GLFW.GLFW_KEY_RIGHT_SUPER -> {
-                // Pure navigation — leave the cycle alone
             }
             default -> {
                 frozenSuggestions = null;
@@ -295,7 +289,6 @@ public class InputScreen extends Screen {
                 suggestionScroll - (int) Math.signum(sy),
                 0, suggestions.size() - MAX_VISIBLE_SUGGESTIONS);
 
-        // Scrolling resets the cycle — next Tab/Down starts from the visible top
         frozenSuggestions = null;
         cycleIndex = -1;
 
@@ -308,7 +301,6 @@ public class InputScreen extends Screen {
     public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTick) {
         super.render(gfx, mouseX, mouseY, partialTick);
 
-        // Title
         gfx.drawString(this.font, this.title,
                 (this.width - this.font.width(this.title)) / 2,
                 this.height / 2 - 65, 0xFFAA00, true);
@@ -344,7 +336,6 @@ public class InputScreen extends Screen {
             }
         }
 
-        // Scroll indicator
         if (suggestions.size() > MAX_VISIBLE_SUGGESTIONS) {
             int indicatorX = this.input.getX() + INPUT_WIDTH - 8;
             int indicatorTop = suggestionTop;

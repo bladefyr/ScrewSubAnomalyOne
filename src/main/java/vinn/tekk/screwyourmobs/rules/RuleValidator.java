@@ -8,11 +8,7 @@ import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforgespi.language.IModInfo;
 import vinn.tekk.screwyourmobs.helpers.Levenshtein;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class RuleValidator {
@@ -32,7 +28,6 @@ public final class RuleValidator {
                 .map(IModInfo::getModId)
                 .collect(Collectors.toSet());
 
-        // Cache tag keys + string forms once, outside the rule loop
         Set<TagKey<EntityType<?>>> knownTagKeys = new HashSet<>();
         Set<String> knownTagNames = new HashSet<>();
         BuiltInRegistries.ENTITY_TYPE.getTags().forEach(pair -> {

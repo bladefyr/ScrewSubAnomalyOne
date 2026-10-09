@@ -173,7 +173,6 @@ public class RuleListWidget extends AbstractWidget {
     public void selectByName(String name, boolean isWorld) {
         RuleKey key = new RuleKey(name, isWorld);
 
-        // Find the row with this key and select it
         for (int i = 0; i < rows.size(); i++) {
             if (rows.get(i) instanceof RuleRow(RemovalRule rule, boolean rowIsWorld)) {
                 if (rule.name().equals(name) && rowIsWorld == isWorld) {
@@ -185,7 +184,6 @@ public class RuleListWidget extends AbstractWidget {
             }
         }
 
-        // Fallback: try the other scope
         boolean otherScope = !isWorld;
         for (int i = 0; i < rows.size(); i++) {
             if (rows.get(i) instanceof RuleRow(RemovalRule rule, boolean rowIsWorld)) {
@@ -198,7 +196,6 @@ public class RuleListWidget extends AbstractWidget {
             }
         }
 
-        // Not found — clear selection
         selectedKey = null;
         onSelect.accept(null);
     }

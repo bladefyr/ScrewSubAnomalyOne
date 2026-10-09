@@ -1,15 +1,9 @@
 package vinn.tekk.screwyourmobs.helpers;
 
-import vinn.tekk.screwyourmobs.helpers.Levenshtein;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Filters and ranks a static list of options against user input.
- * Used by InputScreen to power autocomplete.
- */
 public final class SuggestionHelper {
 
     private SuggestionHelper() {}
@@ -32,15 +26,15 @@ public final class SuggestionHelper {
 
             int score;
             if (cl.equals(lower)) {
-                score = 0;                    // exact
+                score = 0;
             } else if (cl.startsWith(lower)) {
-                score = 1;                    // prefix
+                score = 1;
             } else if (cl.contains(lower)) {
-                score = 2;                    // substring
+                score = 2;
             } else {
                 int dist = Levenshtein.distance(lower, cl);
                 if (dist > FUZZY_MAX_DISTANCE) continue;
-                score = 10 + dist;            // fuzzy
+                score = 10 + dist;
             }
             matches.add(new Scored(candidate, score));
         }

@@ -8,10 +8,6 @@ import vinn.tekk.screwyourmobs.rules.RuleManager;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Validators and option-list builders for the three input types the editor
- * uses: entity/tag IDs, dimension IDs, and rule names.
- */
 public final class RuleValidators {
 
     private RuleValidators() {}
@@ -20,7 +16,6 @@ public final class RuleValidators {
 
     // ---- Option lists ----
 
-    /** All entity IDs plus all entity tags (with a "#" prefix). */
     public static List<String> entityOptions() {
         List<String> options = new ArrayList<>();
 
@@ -35,10 +30,6 @@ public final class RuleValidators {
         return options;
     }
 
-    /**
-     * Dimension IDs. Sourced from the sync snapshot on remote clients,
-     * and from the local server on integrated servers.
-     */
     public static List<String> dimensionOptions() {
         List<String> options = new ArrayList<>(RuleManager.getKnownDimensions());
         options.sort(String::compareToIgnoreCase);
@@ -77,7 +68,6 @@ public final class RuleValidators {
         return InputFlow.ValidationResult.bad(suggestClosestEntity(rl));
     }
 
-    /** Validates a dimension ID against the synced dimension list. */
     public static InputFlow.ValidationResult validateDimension(String input) {
         if (input == null || input.isEmpty()) {
             return InputFlow.ValidationResult.bad(null);

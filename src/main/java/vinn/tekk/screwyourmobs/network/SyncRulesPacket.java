@@ -10,10 +10,6 @@ import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
 import vinn.tekk.screwyourmobs.rules.RuleManager;
 import vinn.tekk.screwyourmobs.rules.RuleSetSnapshot;
 
-/**
- * Server → Client. Pushes the current rule set so the client's
- * RuleManager cache reflects the server state.
- */
 public record SyncRulesPacket(CompoundTag tag) implements CustomPacketPayload {
 
     public static final Type<SyncRulesPacket> TYPE = new Type<>(

@@ -12,10 +12,6 @@ import vinn.tekk.screwyourmobs.procedures.EntityPurger;
 import vinn.tekk.screwyourmobs.rules.RuleManager;
 import vinn.tekk.screwyourmobs.rules.RuleSetSnapshot;
 
-/**
- * Client → Server. Asks the server to reload rules from disk and
- * broadcast the fresh state to all connected players.
- */
 public record RequestReloadPacket() implements CustomPacketPayload {
 
     public static final Type<RequestReloadPacket> TYPE = new Type<>(

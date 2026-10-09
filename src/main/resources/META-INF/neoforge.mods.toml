@@ -9,7 +9,7 @@ displayName="ScrewYourMobs!"
 displayURL="https://modrinth.com/user/vinntekk"
 logoFile="logo.png"
 authors="vinntekk"
-description="General-purpose entity removal for NeoForge. Write simple JSON rules to remove mobs by ID or tag, per-dimension, with global and per-world rule sets. Includes granular debug channels and typo detection!"
+description="Remove any mob, anywhere, with simple JSON rules. Filter by ID or tag, per-dimension, global or per-world. Built-in editor, debug tools, and typo detection."
 
 # Start of user code block mod configuration
 # End of user code block mod configuration
@@ -27,8 +27,6 @@ type="required"
 versionRange="[1.21.1,]"
 ordering="NONE"
 side="BOTH"
-
-
 
 # Start of user code block dependencies configuration
 # End of user code block dependencies configuration
