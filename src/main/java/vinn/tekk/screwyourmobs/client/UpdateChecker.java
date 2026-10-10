@@ -20,9 +20,12 @@ public final class UpdateChecker {
 
     private UpdateChecker() {}
 
+    private static final String SLUG = "screwsubanomalyone";
+
     private static final String MODRINTH_URL =
-            "https://api.modrinth.com/v2/project/screwyourmobs/version"
-                    + "?loaders=[\"neoforge\"]&game_versions=[\"1.21.1\"]";
+            "https://api.modrinth.com/v2/project/" + SLUG + "/version"
+                    + "?loaders=%5B%22neoforge%22%5D"
+                    + "&game_versions=%5B%221.21.1%22%5D";
 
     private static volatile boolean checked = false;
 
@@ -43,7 +46,8 @@ public final class UpdateChecker {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(MODRINTH_URL))
-                    .header("User-Agent", "screwyourmobs/4.0 (github.com/vinntekk/ScrewYourMobs)")
+                    .header("User-Agent", "screwyourmobs/" + ScrewYourMobsMod.VERSION
+                            + " (github.com/vinntekk/ScrewSubAnomalyOne)")
                     .timeout(Duration.ofSeconds(15))
                     .GET()
                     .build();
@@ -77,10 +81,6 @@ public final class UpdateChecker {
         }
     }
 
-    /**
-     * Simple semver-ish comparison. Returns true if {@code candidate} is a
-     * higher version than {@code current}.
-     */
     private static boolean isNewer(String current, String candidate) {
         String[] a = current.split("\\.");
         String[] b = candidate.split("\\.");
@@ -115,7 +115,7 @@ public final class UpdateChecker {
                 .withStyle(style -> style
                         .withClickEvent(new ClickEvent(
                                 ClickEvent.Action.OPEN_URL,
-                                "https://modrinth.com/mod/screwyourmobs"))
+                                "https://modrinth.com/mod/" + SLUG + "/version/" + latest))
                         .withHoverEvent(new HoverEvent(
                                 HoverEvent.Action.SHOW_TEXT,
                                 Component.literal("Open Modrinth page"))));
