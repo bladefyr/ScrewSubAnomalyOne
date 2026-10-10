@@ -166,38 +166,19 @@ public final class RuleValidators {
     // ---- Suggestions ----
 
     private static String suggestClosestEntity(ResourceLocation unknown) {
-        String target = unknown.toString();
-        String best = null;
-        int bestDist = Integer.MAX_VALUE;
-
-        for (ResourceLocation candidate : BuiltInRegistries.ENTITY_TYPE.keySet()) {
-            int dist = Levenshtein.distance(target, candidate.toString());
-            if (dist < bestDist) {
-                bestDist = dist;
-                best = candidate.toString();
-            }
-        }
-
-        return (best != null && bestDist <= MAX_SUGGESTION_DISTANCE) ? best : null;
+        return Levenshtein.closest(
+                unknown.toString(),
+                BuiltInRegistries.ENTITY_TYPE.keySet().stream()
+                        .map(ResourceLocation::toString)
+                        .toList(),
+                MAX_SUGGESTION_DISTANCE);
     }
 
     private static String suggestClosestTag(ResourceLocation unknown) {
-        String target = unknown.toString();
-        String best = null;
-        int bestDist = Integer.MAX_VALUE;
-
-        var iter = BuiltInRegistries.ENTITY_TYPE.getTags().iterator();
-        while (iter.hasNext()) {
-            var pair = iter.next();
-            String candidate = pair.getFirst().location().toString();
-            int dist = Levenshtein.distance(target, candidate);
-            if (dist < bestDist) {
-                bestDist = dist;
-                best = candidate;
-            }
-        }
-
-        return (best != null && bestDist <= MAX_SUGGESTION_DISTANCE) ? best : null;
+        List<String> tags = new ArrayList<>();
+        BuiltInRegistries.ENTITY_TYPE.getTags()
+                .forEach(pair -> tags.add(pair.getFirst().location().toString()));
+        return Levenshtein.closest(unknown.toString(), tags, MAX_SUGGESTION_DISTANCE);
     }
 
     private static String suggestUniqueName(String base) {

@@ -1,5 +1,7 @@
 package vinn.tekk.screwyourmobs.helpers;
 
+import java.util.Collection;
+
 /**
  * Classic Levenshtein distance. O(n*m) time, O(min(n,m)) space.
  * Used to generate "did you mean ...?" suggestions.
@@ -43,5 +45,60 @@ public final class Levenshtein {
         }
 
         return prev[n];
+    }
+
+    /**
+     * Picks the closest candidate to {@code target} from {@code candidates}.
+     *
+     * Ranking:
+     *   1. Smallest Levenshtein distance wins.
+     *   2. On ties, prefer the candidate with the longest common prefix with target.
+     *   3. On further ties, prefer the alphabetically-earlier candidate.
+     *
+     * @param maxDistance reject candidates farther than this. Returns null
+     *                    if nothing is close enough.
+     */
+    public static String closest(String target, Collection<String> candidates, int maxDistance) {
+        if (target == null || candidates == null || candidates.isEmpty()) return null;
+
+        String best = null;
+        int bestDist = Integer.MAX_VALUE;
+        int bestPrefix = -1;
+
+        for (String candidate : candidates) {
+            if (candidate == null) continue;
+
+            int dist = distance(target, candidate);
+            if (dist > maxDistance) continue;
+
+            int prefix = commonPrefixLength(target, candidate);
+
+            boolean better = false;
+            if (dist < bestDist) {
+                better = true;
+            } else if (dist == bestDist) {
+                if (prefix > bestPrefix) {
+                    better = true;
+                } else if (prefix == bestPrefix && (best == null || candidate.compareTo(best) < 0)) {
+                    better = true;
+                }
+            }
+
+            if (better) {
+                best = candidate;
+                bestDist = dist;
+                bestPrefix = prefix;
+            }
+        }
+
+        return best;
+    }
+
+    private static int commonPrefixLength(String a, String b) {
+        int n = Math.min(a.length(), b.length());
+        for (int i = 0; i < n; i++) {
+            if (a.charAt(i) != b.charAt(i)) return i;
+        }
+        return n;
     }
 }
