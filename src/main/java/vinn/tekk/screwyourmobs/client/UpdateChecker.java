@@ -47,7 +47,7 @@ public final class UpdateChecker {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(MODRINTH_URL))
                     .header("User-Agent", "screwyourmobs/" + ScrewYourMobsMod.VERSION
-                            + " (github.com/vinntekk/ScrewSubAnomalyOne)")
+                            + " (github.com/bladefyr/ScrewSubAnomalyOne)")
                     .timeout(Duration.ofSeconds(15))
                     .GET()
                     .build();
