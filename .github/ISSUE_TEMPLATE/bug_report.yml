@@ -13,7 +13,7 @@ body:
         [Modrinth](https://modrinth.com/mod/screwyourmobs) and try again before opening an issue.
 
         **2. If you're on the old Forge version of this mod**, please migrate to the NeoForge build.
-        The Forge version is ancient, programmed with MCreator and will NOT receive fixes.
+        The Forge version is ancient, programmed with MCreator and will **NOT** receive fixes.
 
         **3. Check the logs.**
         Look at `logs/latest.log` and, if debug is enabled, `config/sym/debug.log`.
