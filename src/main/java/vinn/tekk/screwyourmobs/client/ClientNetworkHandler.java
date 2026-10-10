@@ -16,6 +16,7 @@ public class ClientNetworkHandler {
     @SubscribeEvent
     public static void onLogin(ClientPlayerNetworkEvent.LoggingIn event) {
         PacketDistributor.sendToServer(RequestSyncPacket.INSTANCE);
+        UpdateChecker.checkOnce();
 
         ScrewYourMobsMod.LOGGER.debug(
                 "[ScrewYourMobs!] Client joined - requested rule sync.");

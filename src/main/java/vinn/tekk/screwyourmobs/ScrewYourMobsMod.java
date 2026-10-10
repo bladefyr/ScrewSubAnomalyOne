@@ -19,6 +19,7 @@ import vinn.tekk.screwyourmobs.procedures.EntityRemovalHandler;
 public class ScrewYourMobsMod {
 
     public static final String MODID = "screwyourmobs";
+    public static final String VERSION = "4.0";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     public ScrewYourMobsMod(IEventBus modEventBus, ModContainer container) {

@@ -1,0 +1,133 @@
+name: Bug Report
+description: Report something that's broken or behaving incorrectly.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚠️ Before you submit
+
+        **1. Update to the latest version first.**
+        Many bugs are already fixed in newer releases. Download the newest version from
+        [Modrinth](https://modrinth.com/mod/screwyourmobs) and try again before opening an issue.
+
+        **2. If you're on the old Forge version of this mod**, please migrate to the NeoForge build.
+        The Forge version is ancient, programmed with MCreator and will NOT receive fixes.
+
+        **3. Check the logs.**
+        Look at `logs/latest.log` and, if debug is enabled, `config/sym/debug.log`.
+        Errors usually appear there before anything becomes visible in-game.
+
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod Version
+      description: What version of ScrewYourMobs! are you running? Shown at the top-right of the rule editor, or in the mods list.
+      placeholder: "4.0"
+    validations:
+      required: true
+
+  - type: input
+    id: minecraft-version
+    attributes:
+      label: Minecraft Version
+      placeholder: "1.21.1"
+    validations:
+      required: true
+
+  - type: input
+    id: neoforge-version
+    attributes:
+      label: NeoForge Version
+      placeholder: "21.1.100"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where did this happen?
+      options:
+        - Singleplayer
+        - LAN (I am the host)
+        - Multiplayer (connected to a server)
+        - Dedicated server
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly. What did you expect vs. what actually happened?
+      placeholder: |
+        I set up a rule to remove creepers in the Overworld, reloaded, and...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Numbered steps. Be specific.
+      placeholder: |
+        1. Create rule 'test' with entities ['minecraft:creeper']
+        2. Set dimensions to ['minecraft:overworld']
+        3. Run /sym reload
+        4. Spawn a creeper in the Overworld
+        5. Creeper is not removed
+    validations:
+      required: true
+
+  - type: textarea
+    id: rule-file
+    attributes:
+      label: Rule File Contents
+      description: If the bug involves a specific rule, paste the full JSON here.
+      render: json
+      placeholder: |
+        {
+          "entities": ["minecraft:creeper"],
+          "dimensions": ["minecraft:overworld"]
+        }
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log Output
+      description: |
+        Paste any relevant log lines. `latest.log` from the `logs/` folder, and `config/sym/debug.log` if you have debug enabled.
+        If you don't know how to find your logs, search "Minecraft logs location" for your OS.
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: modpack
+    attributes:
+      label: Modpack (if any)
+      description: If you're using a modpack, name it here. Some bugs are pack-specific.
+      placeholder: "All the Mods 10, or none"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      description: All boxes except the last one must be checked before you can submit.
+      options:
+        - label: I am using the **latest version** of ScrewYourMobs! (I checked Modrinth before opening this issue)
+          required: true
+        - label: I am **not** using the old Forge build of this mod (NeoForge only)
+          required: true
+        - label: I have **checked the logs** (`logs/latest.log`, and `config/sym/debug.log` if enabled)
+          required: true
+        - label: I have searched the existing open and closed issues for duplicates
+          required: true
+        - label: I have read the rules format documentation
+          required: false

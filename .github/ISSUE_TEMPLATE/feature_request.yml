@@ -1,0 +1,56 @@
+name: Feature Request
+description: Suggest an idea or improvement.
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before submitting, check that a similar request doesn't already exist in the issues list.
+        Small, well-scoped ideas are much more likely to get implemented than big sweeping rewrites.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the friction you're hitting. Feature requests that start with "it's annoying when..." tend to be the best.
+      placeholder: |
+        It's annoying that I can't bulk-add entities from a single namespace without typing each one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How would you like it to work? Be as specific or as vague as you want.
+      placeholder: |
+        A "+ Add from namespace" button that opens a text field for a mod ID and adds all entities from that namespace.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other ways this could be solved?
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, mockups, related issues, anything useful.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have checked the existing issues for a similar request
+          required: true
+        - label: This is a feature for the mod itself, not a request for help configuring it
+          required: true
