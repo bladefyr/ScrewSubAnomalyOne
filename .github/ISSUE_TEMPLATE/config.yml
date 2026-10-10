@@ -3,6 +3,3 @@ contact_links:
   - name: Modrinth Page
     url: https://modrinth.com/mod/screwyourmobs
     about: Download the latest version, or leave a review.
-  - name: Rules Format Documentation
-    url: https://github.com/vinntekk/ScrewYourMobs#rule-files
-    about: How to write rule JSON files.
