@@ -29,3 +29,5 @@ Rules with the same filename in both locations: the per-world version wins.
 - `dimensions` — list of dimension IDs (`namespace:dimension`). Empty or omitted means "all dimensions."
 
 Filenames starting with `_` are ignored by the loader, useful for templates or disabled rules.
+
+It is recommended to just use the '/sym' or '/symrules' commands instead.
