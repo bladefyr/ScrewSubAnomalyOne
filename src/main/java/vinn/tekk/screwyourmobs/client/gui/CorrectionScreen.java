@@ -1,9 +1,10 @@
-package vinn.tekk.screwyourmobs.client;
+package vinn.tekk.screwyourmobs.client.gui;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import vinn.tekk.screwyourmobs.client.AccentColor;
 
 import java.util.function.Consumer;
 
@@ -13,16 +14,19 @@ public class CorrectionScreen extends Screen {
 
     private final String originalInput;
     private final String suggestion;
+    private final String reason;
     private final Consumer<Result> callback;
 
     public CorrectionScreen(Screen parent,
                             Component title,
                             String originalInput,
                             String suggestion,
+                            String reason,
                             Consumer<Result> callback) {
         super(title);
         this.originalInput = originalInput;
         this.suggestion = suggestion;
+        this.reason = reason;
         this.callback = callback;
     }
 
@@ -64,30 +68,46 @@ public class CorrectionScreen extends Screen {
     public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTick) {
         super.render(gfx, mouseX, mouseY, partialTick);
 
+        int accent = AccentColor.solid();
         int centerY = this.height / 2;
 
+        // Header "X isn't valid"
         gfx.drawString(this.font, this.title,
                 (this.width - this.font.width(this.title)) / 2,
-                centerY - 40, 0xFF5555, true);
+                centerY - 52, 0xFF5555, true);
 
+        // The invalid input, in quotes
         Component invalidLine = Component.translatable(
                 "screwyourmobs.screen.correction.invalid", originalInput);
         gfx.drawString(this.font, invalidLine,
                 (this.width - this.font.width(invalidLine)) / 2,
-                centerY - 22, 0xFFFFFF, false);
+                centerY - 34, 0xFFFFFF, false);
 
+        int y = centerY - 16;
+
+        // Reason (why it failed), if present
+        if (reason != null) {
+            Component reasonLine = Component.literal(reason);
+            gfx.drawString(this.font, reasonLine,
+                    (this.width - this.font.width(reasonLine)) / 2,
+                    y, 0xAAAAAA, false);
+            y += 14;
+        }
+
+        // Suggestion (what to use instead), if present
         if (suggestion != null) {
             Component suggestLine = Component.translatable(
                     "screwyourmobs.screen.correction.suggest", suggestion);
             gfx.drawString(this.font, suggestLine,
                     (this.width - this.font.width(suggestLine)) / 2,
-                    centerY - 4, 0xFFAA00, true);
-        } else {
+                    y, accent, true);
+        } else if (reason == null) {
+            // Neither set — generic message
             Component noMatch = Component.translatable(
                     "screwyourmobs.screen.correction.no_match");
             gfx.drawString(this.font, noMatch,
                     (this.width - this.font.width(noMatch)) / 2,
-                    centerY - 4, 0xFFAA00, false);
+                    y, accent, false);
         }
     }
 

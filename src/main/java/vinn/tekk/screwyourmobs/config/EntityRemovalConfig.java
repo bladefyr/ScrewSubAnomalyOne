@@ -12,9 +12,11 @@ public class EntityRemovalConfig {
 
     // --- General ---
     public static final ModConfigSpec.ConfigValue<String> ENTITIES_TO_KEEP;
+    public static final ModConfigSpec.ConfigValue<String> DISPLAY_ACCENT_COLOR;
 
     // --- Rules ---
     public static final ModConfigSpec.BooleanValue RULES_VALIDATE_ON_LOAD;
+    public static final ModConfigSpec.IntValue MAX_SUGGESTIONS;
 
     // --- Debug ---
     public static final ModConfigSpec.BooleanValue DEBUG_ENABLED;
@@ -26,8 +28,11 @@ public class EntityRemovalConfig {
     public static final ModConfigSpec.BooleanValue DEBUG_TO_CHAT;
     public static final ModConfigSpec.BooleanValue DEBUG_TO_FILE;
 
+    // --- DEV ---
+    public static final ModConfigSpec.BooleanValue DEBUG_DEV_MODE;
+
     static {
-        BUILDER.comment("General settings for entity removal.")
+        BUILDER.comment("General settings.")
                 .push("general");
 
         ENTITIES_TO_KEEP = BUILDER
@@ -37,6 +42,13 @@ public class EntityRemovalConfig {
                         "Example: minecraft:wither, minecraft:ender_dragon")
                 .translation("screwyourmobs.config.general.entitiesToKeep")
                 .define("entitiesToKeep", "");
+
+        DISPLAY_ACCENT_COLOR = BUILDER
+                .comment("Accent color used throughout the rule editor UI.",
+                        "Hex format: RRGGBB or AARRGGBB.",
+                        "'#FFAA00' is the default color, amber.")
+                .translation("screwyourmobs.config.general.accentColor")
+                .define("accentColor", "FFAA00");
 
         BUILDER.pop();
 
@@ -48,6 +60,13 @@ public class EntityRemovalConfig {
                         "Warnings are shown through the debug channels below.")
                 .translation("screwyourmobs.config.rules.validateOnLoad")
                 .define("validateOnLoad", true);
+
+        MAX_SUGGESTIONS = BUILDER
+                .comment("Maximum number of entries shown in the editor's autocomplete lists.",
+                        "Higher values mean longer lists but slightly more work per keystroke.",
+                        "Performance impact SHOULD be negligible.")
+                .translation("screwyourmobs.config.rules.maxSuggestions")
+                .defineInRange("maxSuggestions", 250, 10, 10000);
 
         BUILDER.pop();
 
@@ -95,6 +114,12 @@ public class EntityRemovalConfig {
                 .translation("screwyourmobs.config.debug.outputFile")
                 .define("outputFile", false);
 
+        DEBUG_DEV_MODE = BUILDER
+                .comment("Enable experimental or developer-only features.",
+                        "Not intended for regular use. Some features may be unstable.")
+                .translation("screwyourmobs.config.debug.devMode")
+                .define("devMode", false);
+
         BUILDER.pop();
     }
 
@@ -102,6 +127,14 @@ public class EntityRemovalConfig {
 
     public static List<String> getEntitiesToKeep() {
         return parseCsv(ENTITIES_TO_KEEP.get());
+    }
+
+    public static int getMaxSuggestions() {
+        return MAX_SUGGESTIONS.get();
+    }
+
+    public static String getAccentColor() {
+        return DISPLAY_ACCENT_COLOR.get();
     }
 
     private static List<String> parseCsv(String value) {

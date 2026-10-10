@@ -190,8 +190,11 @@ public class RuleDetailWidget extends AbstractWidget {
         }
     }
 
-    private int rowIndexAt(double my) {
-        if (!isMouseOver(getX(), my)) return -1;
+    private int rowIndexAt(double mx, double my) {
+        if (!isMouseOver(mx, my)) return -1;
+
+        if (mx >= getX() + width - SCROLLBAR_WIDTH) return -1;
+
         int visibleTop = (int) scrollOffset;
         int localY = (int) my - getY() + visibleTop;
         int index = localY / ROW_HEIGHT;
@@ -199,7 +202,7 @@ public class RuleDetailWidget extends AbstractWidget {
     }
 
     private boolean isInActionZone(double mx) {
-        return mx >= getX() + width - ACTION_ZONE_WIDTH - SCROLLBAR_WIDTH;
+        return mx >= getX() + (double) width / 2;
     }
 
     // ---- Rendering ----
@@ -213,7 +216,7 @@ public class RuleDetailWidget extends AbstractWidget {
             int visibleTop = (int) scrollOffset;
             int visibleBottom = visibleTop + height;
 
-            int hoveredIndex = rowIndexAt(mouseY);
+            int hoveredIndex = rowIndexAt(mouseX, mouseY);
             boolean hoveredActionZone = isInActionZone(mouseX);
             int contentWidth = width - 4 - SCROLLBAR_WIDTH - 4;
 
@@ -233,9 +236,8 @@ public class RuleDetailWidget extends AbstractWidget {
                                     color, rowHovered);
 
                     case Header(Component text) ->
-                            MarqueeText.draw(gfx, text,
-                                    getX() + 4, drawY + 1, contentWidth,
-                                    0xFFAA00, rowHovered);
+                            MarqueeText.draw(gfx, text, getX() + 4, drawY + 1, contentWidth,
+                                    AccentColor.solid(), rowHovered);
 
                     case Spacer() -> { /* no-op */ }
 
@@ -264,7 +266,7 @@ public class RuleDetailWidget extends AbstractWidget {
 
                         int actionColor;
                         if (actionType == ActionType.RENAME) {
-                            actionColor = actionHovered ? 0xFFFFAA00 : 0xFFFFFF88;
+                            actionColor = actionHovered ? AccentColor.solid() : (AccentColor.rgb() | 0x88000000);
                         } else {
                             actionColor = actionHovered ? 0xFFFF5555 : 0xFFFFAAAA;
                         }
@@ -302,7 +304,7 @@ public class RuleDetailWidget extends AbstractWidget {
         if (button != 0) return false;
         if (currentKey == null) return false;
 
-        int index = rowIndexAt(my);
+        int index = rowIndexAt(mx, my);
         if (index < 0) return false;
 
         Line line = lines.get(index);

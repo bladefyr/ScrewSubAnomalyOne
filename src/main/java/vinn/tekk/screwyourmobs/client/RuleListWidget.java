@@ -111,7 +111,7 @@ public class RuleListWidget extends AbstractWidget {
 
                 if (row instanceof SectionRow(Component label)) {
                     gfx.drawString(Minecraft.getInstance().font,
-                            label, getX() + 4, drawY + 6, 0xFFAA00, false);
+                            label, getX() + 4, drawY + 6, AccentColor.solid(), false);
                 } else if (row instanceof RuleRow r) {
                     renderRuleRow(gfx, r, drawY, mouseX, mouseY);
                 }
@@ -138,21 +138,26 @@ public class RuleListWidget extends AbstractWidget {
         int textColor = r.rule().disabled() ? 0x888888 : 0xFFFFFF;
 
         RuleStatus status = statusOf(r.rule());
+
+        boolean rowHovered = mouseX >= getX() && mouseX <= getX() + width
+                && mouseY >= drawY && mouseY <= drawY + ROW_HEIGHT;
+
+        if (rowHovered && !selected) {
+            gfx.fill(getX(), drawY, getX() + width, drawY + ROW_HEIGHT, AccentColor.faint());
+        }
+
         gfx.blit(status.texture(), getX() + 4, drawY + 2, 0, 0, 16, 16, 16, 16);
 
         int nameX = getX() + 24;
         int nameMaxWidth = width - 24 - SCROLLBAR_WIDTH - 4;
-
-        boolean rowHovered = mouseX >= getX() && mouseX <= getX() + width
-                && mouseY >= drawY && mouseY <= drawY + ROW_HEIGHT;
 
         MarqueeText.draw(gfx, Component.literal(r.rule().name()),
                 nameX, drawY + 6, nameMaxWidth, textColor,
                 rowHovered);
 
         if (selected) {
-            gfx.fill(getX(), drawY, getX() + width, drawY + ROW_HEIGHT, 0x40FFAA00);
-            gfx.fill(getX(), drawY, getX() + 2, drawY + ROW_HEIGHT, 0xFFFFAA00);
+            gfx.fill(getX(), drawY, getX() + width, drawY + ROW_HEIGHT, AccentColor.dim());
+            gfx.fill(getX(), drawY, getX() + 2, drawY + ROW_HEIGHT, AccentColor.solid());
         }
 
         if (mouseX >= getX() + 4 && mouseX <= getX() + 20

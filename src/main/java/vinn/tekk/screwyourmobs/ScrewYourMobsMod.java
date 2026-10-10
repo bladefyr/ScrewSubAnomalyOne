@@ -11,6 +11,7 @@ import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import vinn.tekk.screwyourmobs.client.AccentColor;
 import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
 import vinn.tekk.screwyourmobs.procedures.EntityRemovalHandler;
 
@@ -45,6 +46,7 @@ public class ScrewYourMobsMod {
 
     private void onConfigReloading(ModConfigEvent.Reloading event) {
         if (event.getConfig().getSpec() == EntityRemovalConfig.SPECIFICATION) {
+            AccentColor.invalidateCache();
             EntityRemovalHandler.markConfigForReload();
         }
     }

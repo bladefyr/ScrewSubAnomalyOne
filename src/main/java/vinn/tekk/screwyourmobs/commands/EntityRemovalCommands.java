@@ -16,6 +16,7 @@ import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
+import vinn.tekk.screwyourmobs.client.gui.RuleEditorScreen;
 import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
 import vinn.tekk.screwyourmobs.debug.DebugLog;
 import vinn.tekk.screwyourmobs.network.SyncRulesPacket;
@@ -211,7 +212,7 @@ public class EntityRemovalCommands {
     private static void openScreenOnClient() {
         net.minecraft.client.Minecraft.getInstance().execute(() ->
                 net.minecraft.client.Minecraft.getInstance().setScreen(
-                        new vinn.tekk.screwyourmobs.client.RuleEditorScreen(
+                        new RuleEditorScreen(
                                 net.minecraft.client.Minecraft.getInstance().screen)));
     }
 

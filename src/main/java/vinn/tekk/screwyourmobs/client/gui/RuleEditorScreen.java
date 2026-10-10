@@ -1,4 +1,4 @@
-package vinn.tekk.screwyourmobs.client;
+package vinn.tekk.screwyourmobs.client.gui;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,8 +12,11 @@ import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import vinn.tekk.screwyourmobs.ScrewYourMobsMod;
+import vinn.tekk.screwyourmobs.client.*;
+import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
 import vinn.tekk.screwyourmobs.network.MutateRulePacket;
 import vinn.tekk.screwyourmobs.network.RequestReloadPacket;
+import vinn.tekk.screwyourmobs.procedures.EntityPurger;
 import vinn.tekk.screwyourmobs.rules.RuleLoader;
 import vinn.tekk.screwyourmobs.rules.RuleManager;
 import vinn.tekk.screwyourmobs.rules.RuleWriter;
@@ -34,6 +37,8 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
 
     private Button deleteButton;
     private Button toggleButton;
+
+    private RuleListWidget.RuleKey lastSelected;
 
     private static final String MOD_VERSION = ModList.get()
             .getModContainerById(ScrewYourMobsMod.MODID)
@@ -117,12 +122,17 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
                         b -> onClose())
                 .bounds(this.width - PADDING - 70, buttonY, 70, 20).build());
 
+        if (lastSelected != null) {
+            ruleList.selectByName(lastSelected.name(), lastSelected.isWorld());
+        }
+
         updateButtons();
     }
 
     // ---- Selection ----
 
     private void onRuleSelected(RuleListWidget.RuleKey key) {
+        this.lastSelected = key;
         ruleDetail.setRule(key);
         updateButtons();
     }
@@ -172,6 +182,7 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
         Minecraft.getInstance().setScreen(new ConfirmScreen(
                 confirmed -> {
                     if (confirmed) {
+                        lastSelected = null;
                         mutate(MutateRulePacket.Operation.DELETE, selected.name(), "");
                     }
                     Minecraft.getInstance().setScreen(this);
@@ -189,16 +200,30 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
 
     private void onReload() {
         if (isLocalServer()) {
+            ClientChat.actionBar(Component.literal("§7Reloading rules..."));
+
             RuleManager.reload();
-            ruleList.refresh();
-            ruleDetail.setRule(ruleList.getSelectedKey());
-            updateButtons();
-        } else {
-            PacketDistributor.sendToServer(RequestReloadPacket.INSTANCE);
-            if (Minecraft.getInstance().player != null) {
-                Minecraft.getInstance().player.displayClientMessage(
-                        Component.literal("§7Reloading rules on server..."), true);
+            EntityPurger.purgeAll();
+
+            int rules = RuleManager.getTotalRules();
+            int warnings = RuleManager.getLastWarnings().size();
+
+            ClientChat.send(Component.literal(
+                    "§a[ScrewYourMobs!] §fReloaded §a" + rules + " §frules, §a"
+                            + warnings + " §fvalidation warning(s)."));
+
+            if (EntityRemovalConfig.DEBUG_ENABLED.get()
+                    && EntityRemovalConfig.DEBUG_VALIDATE.get()
+                    && EntityRemovalConfig.DEBUG_TO_CHAT.get()) {
+                for (String w : RuleManager.getLastWarnings()) {
+                    ClientChat.send(Component.literal("§7[§bDEBUG/validate§7] §f" + w));
+                }
             }
+
+            refreshAll();
+        } else {
+            ClientChat.actionBar(Component.literal("§7Reloading rules on server..."));
+            PacketDistributor.sendToServer(RequestReloadPacket.INSTANCE);
         }
     }
 
@@ -206,12 +231,13 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
 
     @Override
     public void onAddEntity(String ruleName) {
-        InputFlow.prompt(
+        InputFlow.promptAndStay(
                 Minecraft.getInstance(),
                 this,
                 Component.translatable("screwyourmobs.screen.add_entity.title", ruleName),
                 RuleValidators.entityOptions(),
                 "",
+                java.util.Set.of(),
                 RuleValidators::validateEntity,
                 value -> mutate(MutateRulePacket.Operation.ADD_ENTITY, ruleName, value)
         );
@@ -219,12 +245,13 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
 
     @Override
     public void onAddDimension(String ruleName) {
-        InputFlow.prompt(
+        InputFlow.promptAndStay(
                 Minecraft.getInstance(),
                 this,
                 Component.translatable("screwyourmobs.screen.add_dimension.title", ruleName),
                 RuleValidators.dimensionOptions(),
                 "",
+                java.util.Set.of(),
                 RuleValidators::validateDimension,
                 value -> mutate(MutateRulePacket.Operation.ADD_DIMENSION, ruleName, value)
         );
@@ -278,7 +305,12 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
                 ruleName,
                 marked,
                 RuleValidators::validateRuleName,
-                newName -> mutate(MutateRulePacket.Operation.RENAME, ruleName, newName)
+                newName -> {
+                    if (lastSelected != null && lastSelected.name().equals(ruleName)) {
+                        lastSelected = new RuleListWidget.RuleKey(newName, lastSelected.isWorld());
+                    }
+                    mutate(MutateRulePacket.Operation.RENAME, ruleName, newName);
+                }
         );
     }
 
@@ -312,11 +344,13 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
     // ---- Refresh ----
 
     private void refreshAll() {
-        var previous = ruleList.getSelectedKey();
+        var current = ruleList.getSelectedKey();
+        if (current != null) lastSelected = current;
+
         ruleList.refresh();
 
-        if (previous != null) {
-            ruleList.selectByName(previous.name(), previous.isWorld());
+        if (lastSelected != null) {
+            ruleList.selectByName(lastSelected.name(), lastSelected.isWorld());
         }
 
         ruleDetail.setRule(ruleList.getSelectedKey());
@@ -329,12 +363,12 @@ public class RuleEditorScreen extends Screen implements RuleDetailWidget.Callbac
     public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTick) {
         super.render(gfx, mouseX, mouseY, partialTick);
 
-        gfx.drawString(this.font, this.title, PADDING, 10, 0xFFAA00, true);
+        gfx.drawString(this.font, this.title, PADDING, 10, AccentColor.solid(), true);
 
         String versionStr = "v" + MOD_VERSION;
         gfx.drawString(this.font, versionStr,
                 this.width - PADDING - this.font.width(versionStr), 10,
-                0xFFAA00, true);
+                AccentColor.solid(), true);
     }
 
     private final Runnable syncListener = () -> {

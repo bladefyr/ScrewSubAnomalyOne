@@ -1,4 +1,4 @@
-package vinn.tekk.screwyourmobs.client;
+package vinn.tekk.screwyourmobs.client.gui;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -7,6 +7,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
+import vinn.tekk.screwyourmobs.client.AccentColor;
 import vinn.tekk.screwyourmobs.helpers.SuggestionHelper;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class InputScreen extends Screen {
     private final Screen parent;
     private final List<String> allOptions;
     private final Consumer<String> onAccept;
+    private final Consumer<String> onAcceptAndStay;
     private final String initialValue;
     private final java.util.Set<String> markedOptions;
 
@@ -42,7 +44,7 @@ public class InputScreen extends Screen {
                        List<String> allOptions,
                        String initialValue,
                        Consumer<String> onAccept) {
-        this(parent, title, allOptions, initialValue, java.util.Set.of(), onAccept);
+        this(parent, title, allOptions, initialValue, java.util.Set.of(), onAccept, null);
     }
 
     public InputScreen(Screen parent,
@@ -51,12 +53,23 @@ public class InputScreen extends Screen {
                        String initialValue,
                        java.util.Set<String> markedOptions,
                        Consumer<String> onAccept) {
+        this(parent, title, allOptions, initialValue, markedOptions, onAccept, null);
+    }
+
+    public InputScreen(Screen parent,
+                       Component title,
+                       List<String> allOptions,
+                       String initialValue,
+                       java.util.Set<String> markedOptions,
+                       Consumer<String> onAccept,
+                       Consumer<String> onAcceptAndStay) {
         super(title);
         this.parent = parent;
         this.allOptions = allOptions;
         this.initialValue = initialValue;
         this.markedOptions = markedOptions;
         this.onAccept = onAccept;
+        this.onAcceptAndStay = onAcceptAndStay;
     }
 
     @Override
@@ -78,19 +91,40 @@ public class InputScreen extends Screen {
         onInputChanged(this.input.getValue());
 
         int buttonY = this.height / 2 + 60;
-        int buttonWidth = 100;
+        int gap = 8;
+        boolean hasStay = onAcceptAndStay != null;
+
+        int confirmWidth = 100;
+        int stayWidth = 130;
+        int cancelWidth = 100;
+
+        int totalWidth = confirmWidth
+                + (hasStay ? gap + stayWidth : 0)
+                + gap + cancelWidth;
+        int startX = (this.width - totalWidth) / 2;
+        int cx2 = startX;
 
         this.okButton = Button.builder(
                         Component.translatable("screwyourmobs.screen.input.ok"),
                         b -> submit())
-                .bounds(this.width / 2 - buttonWidth - 4, buttonY, buttonWidth, 20)
+                .bounds(cx2, buttonY, confirmWidth, 20)
                 .build();
         addRenderableWidget(this.okButton);
+        cx2 += confirmWidth + gap;
+
+        if (hasStay) {
+            addRenderableWidget(Button.builder(
+                            Component.translatable("screwyourmobs.screen.input.ok_and_stay"),
+                            b -> submitAndStay())
+                    .bounds(cx2, buttonY, stayWidth, 20)
+                    .build());
+            cx2 += stayWidth + gap;
+        }
 
         addRenderableWidget(Button.builder(
                         Component.translatable("gui.cancel"),
                         b -> cancel())
-                .bounds(this.width / 2 + 4, buttonY, buttonWidth, 20)
+                .bounds(cx2, buttonY, cancelWidth, 20)
                 .build());
     }
 
@@ -186,6 +220,12 @@ public class InputScreen extends Screen {
         if (onAccept != null) onAccept.accept(value);
     }
 
+    private void submitAndStay() {
+        String value = input.getValue().trim();
+        if (value.isEmpty()) return;
+        if (onAcceptAndStay != null) onAcceptAndStay.accept(value);
+    }
+
     private void cancel() {
         if (onAccept != null) onAccept.accept(null);
     }
@@ -229,7 +269,13 @@ public class InputScreen extends Screen {
                     suppressResponder = false;
                 }
             }
-            submit();
+
+            boolean shift = (modifiers & GLFW.GLFW_MOD_SHIFT) != 0;
+            if (shift && onAcceptAndStay != null) {
+                submitAndStay();
+            } else {
+                submit();
+            }
             return true;
         }
 
@@ -301,9 +347,13 @@ public class InputScreen extends Screen {
     public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTick) {
         super.render(gfx, mouseX, mouseY, partialTick);
 
+        int accent = AccentColor.solid();
+        int accentDim = AccentColor.dim();
+        int accentFaint = AccentColor.faint();
+
         gfx.drawString(this.font, this.title,
                 (this.width - this.font.width(this.title)) / 2,
-                this.height / 2 - 65, 0xFFAA00, true);
+                this.height / 2 - 65, accent, true);
 
         int suggestionTop = this.input.getY() + INPUT_HEIGHT + 6;
         int visible = Math.min(suggestions.size() - suggestionScroll, MAX_VISIBLE_SUGGESTIONS);
@@ -325,8 +375,15 @@ public class InputScreen extends Screen {
                         || index == hovered;
             }
 
-            int color = highlighted ? 0xFFFFAA00 : 0xFFAAAAAA;
+            int color = highlighted ? accent : 0xFFAAAAAA;
             String prefix = highlighted ? "▸ " : "  ";
+
+            if (highlighted) {
+                int rowLeft = this.input.getX();
+                int rowRight = this.input.getX() + INPUT_WIDTH - 10;
+                gfx.fill(rowLeft, y - 1, rowRight, y + SUGGESTION_ROW_HEIGHT - 1,
+                        highlighted && frozenSuggestions != null ? accentDim : accentFaint);
+            }
 
             gfx.drawString(this.font, prefix + suggestion, x, y, color, false);
 
@@ -351,7 +408,7 @@ public class InputScreen extends Screen {
             int thumbY = indicatorTop
                     + (indicatorHeight - thumbHeight) * suggestionScroll / maxScroll;
 
-            gfx.fill(indicatorX, thumbY, indicatorX + 3, thumbY + thumbHeight, 0xFFFFAA00);
+            gfx.fill(indicatorX, thumbY, indicatorX + 3, thumbY + thumbHeight, accent);
         }
 
         if (suggestions.isEmpty() && !input.getValue().isEmpty()) {

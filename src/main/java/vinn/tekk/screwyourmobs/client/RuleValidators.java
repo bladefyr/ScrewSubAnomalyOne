@@ -40,7 +40,7 @@ public final class RuleValidators {
 
     public static InputFlow.ValidationResult validateEntity(String input) {
         if (input == null || input.isEmpty()) {
-            return InputFlow.ValidationResult.bad(null);
+            return InputFlow.ValidationResult.bad(null, "Entity can't be empty");
         }
 
         boolean isTag = input.startsWith("#");
@@ -48,7 +48,8 @@ public final class RuleValidators {
         ResourceLocation rl = ResourceLocation.tryParse(bare);
 
         if (rl == null) {
-            return InputFlow.ValidationResult.bad(null);
+            return InputFlow.ValidationResult.bad(null,
+                    "Not a valid ID (expected namespace:id)");
         }
 
         if (isTag) {
@@ -58,24 +59,29 @@ public final class RuleValidators {
 
             String suggestion = suggestClosestTag(rl);
             return InputFlow.ValidationResult.bad(
-                    suggestion != null ? "#" + suggestion : null);
+                    suggestion != null ? "#" + suggestion : null,
+                    "Tag #" + rl + " doesn't exist");
         }
 
         if (BuiltInRegistries.ENTITY_TYPE.containsKey(rl)) {
             return InputFlow.ValidationResult.ok();
         }
 
-        return InputFlow.ValidationResult.bad(suggestClosestEntity(rl));
+        String suggestion = suggestClosestEntity(rl);
+        return InputFlow.ValidationResult.bad(
+                suggestion,
+                "Entity '" + rl + "' doesn't exist");
     }
 
     public static InputFlow.ValidationResult validateDimension(String input) {
         if (input == null || input.isEmpty()) {
-            return InputFlow.ValidationResult.bad(null);
+            return InputFlow.ValidationResult.bad(null, "Dimension can't be empty");
         }
 
         ResourceLocation rl = ResourceLocation.tryParse(input);
         if (rl == null) {
-            return InputFlow.ValidationResult.bad(null);
+            return InputFlow.ValidationResult.bad(null,
+                    "Not a valid ID (expected namespace:dimension)");
         }
 
         String inputStr = rl.toString();
@@ -95,29 +101,66 @@ public final class RuleValidators {
             }
         }
 
+        String suggestion = (best != null && bestDist <= MAX_SUGGESTION_DISTANCE) ? best : null;
         return InputFlow.ValidationResult.bad(
-                (best != null && bestDist <= MAX_SUGGESTION_DISTANCE) ? best : null);
+                suggestion,
+                "Dimension '" + inputStr + "' doesn't exist");
     }
 
     public static InputFlow.ValidationResult validateRuleName(String input) {
-        if (input == null || input.isEmpty()) {
-            return InputFlow.ValidationResult.bad(null);
+        if (input == null || input.trim().isEmpty()) {
+            return InputFlow.ValidationResult.bad(null, "Name can't be empty");
         }
 
-        if (input.startsWith("_")) {
-            return InputFlow.ValidationResult.bad(null);
+        String working = input.trim();
+        List<String> reasons = new ArrayList<>();
+
+        if (!working.equals(input)) {
+            reasons.add("Name had leading or trailing whitespace");
         }
 
-        if (!input.matches("[a-zA-Z0-9_\\-]+")) {
-            return InputFlow.ValidationResult.bad(null);
+        // Strip leading underscores
+        if (working.startsWith("_")) {
+            working = working.replaceAll("^_+", "");
+            reasons.add("Names can't start with '_'");
         }
 
-        if (RuleManager.getRuleNames().contains(input)
-                || RuleManager.getDisabledRules().containsKey(input)) {
-            return InputFlow.ValidationResult.bad(suggestUniqueName(input));
+        // Strip filesystem-unsafe characters
+        if (working.matches(".*[<>:\"/\\\\|?*\\x00-\\x1f].*")) {
+            working = working.replaceAll("[<>:\"/\\\\|?*\\x00-\\x1f]", "");
+            reasons.add("Names can't contain < > : \" / \\ | ? *");
         }
 
-        return InputFlow.ValidationResult.ok();
+        // Strip trailing periods
+        if (working.endsWith(".")) {
+            working = working.replaceAll("\\.+$", "");
+            reasons.add("Names can't end with a period");
+        }
+
+        // Truncate to 100 chars
+        if (working.length() > 100) {
+            working = working.substring(0, 100);
+            reasons.add("Names can be at most 100 characters");
+        }
+
+        // Collision check runs on the cleaned name
+        if (!working.isEmpty()
+                && (RuleManager.getRuleNames().contains(working)
+                || RuleManager.getDisabledRules().containsKey(working))) {
+            working = suggestUniqueName(working);
+            reasons.add("A rule named '" + input.trim() + "' already exists");
+        }
+
+        if (reasons.isEmpty()) {
+            return InputFlow.ValidationResult.ok();
+        }
+
+        if (working.isEmpty()) {
+            return InputFlow.ValidationResult.bad(null,
+                    String.join(". ", reasons) + " — nothing left after cleanup");
+        }
+
+        return InputFlow.ValidationResult.bad(working, String.join(". ", reasons));
     }
 
     // ---- Suggestions ----

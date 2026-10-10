@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public final class RuleManager {
 
@@ -36,7 +36,7 @@ public final class RuleManager {
     private static volatile int totalRules = 0;
     private static volatile int totalEntityEntries = 0;
 
-    private static final List<Runnable> SYNC_LISTENERS = new CopyOnWriteArrayList<>();
+    private static final Set<Runnable> SYNC_LISTENERS = new CopyOnWriteArraySet<>();
 
     public static void addSyncListener(Runnable listener) {
         SYNC_LISTENERS.add(listener);
@@ -91,20 +91,17 @@ public final class RuleManager {
 
     public static RemovalRule findMatch(ResourceLocation entityId, ResourceLocation dimensionId,
                                         EntityType<?> entityType) {
-        // 1. Global entity ID match
         List<RemovalRule> globalMatches = GLOBAL_INDEX.get(entityId);
         if (globalMatches != null && !globalMatches.isEmpty()) {
             return globalMatches.getFirst();
         }
 
-        // 2. Global tag match
         for (Map.Entry<TagKey<EntityType<?>>, List<RemovalRule>> entry : GLOBAL_TAG_INDEX.entrySet()) {
             if (BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(entityType).is(entry.getKey())) {
                 return entry.getValue().getFirst();
             }
         }
 
-        // 3. Dimension-specific entity ID match
         Map<ResourceLocation, List<RemovalRule>> dimMap = DIMENSION_INDEX.get(dimensionId);
         if (dimMap != null) {
             List<RemovalRule> dimMatches = dimMap.get(entityId);
@@ -113,7 +110,6 @@ public final class RuleManager {
             }
         }
 
-        // 4. Dimension-specific tag match
         Map<TagKey<EntityType<?>>, List<RemovalRule>> dimTagMap = DIMENSION_TAG_INDEX.get(dimensionId);
         if (dimTagMap != null) {
             for (Map.Entry<TagKey<EntityType<?>>, List<RemovalRule>> entry : dimTagMap.entrySet()) {

@@ -1,5 +1,7 @@
 package vinn.tekk.screwyourmobs.helpers;
 
+import vinn.tekk.screwyourmobs.config.EntityRemovalConfig;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -8,14 +10,14 @@ public final class SuggestionHelper {
 
     private SuggestionHelper() {}
 
-    private static final int MAX_SUGGESTIONS = 100;
     private static final int FUZZY_MAX_DISTANCE = 5;
 
-    public static List<String> filter(List<String> options, String input) {
+    /** Explicit-cap version, used by the benchmark and any code that wants to override the config. */
+    public static List<String> filter(List<String> options, String input, int maxOverride) {
         if (input == null || input.isEmpty()) {
-            return options.size() <= MAX_SUGGESTIONS
+            return options.size() <= maxOverride
                     ? options
-                    : options.subList(0, MAX_SUGGESTIONS);
+                    : options.subList(0, maxOverride);
         }
 
         String lower = input.toLowerCase();
@@ -44,9 +46,14 @@ public final class SuggestionHelper {
                 .thenComparing(s -> s.text().toLowerCase()));
 
         return matches.stream()
-                .limit(MAX_SUGGESTIONS)
+                .limit(maxOverride)
                 .map(Scored::text)
                 .toList();
+    }
+
+    /** Reads the cap from config. */
+    public static List<String> filter(List<String> options, String input) {
+        return filter(options, input, EntityRemovalConfig.getMaxSuggestions());
     }
 
     private record Scored(String text, int score) {}

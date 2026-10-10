@@ -9,23 +9,29 @@
   "screwyourmobs.configuration.section.sym.screwyourmobs.common.toml": "§6ScrewYourMobs!",
   "screwyourmobs.configuration.section.sym.screwyourmobs.common.toml.title": "§6ScrewYourMobs! Configuration",
 
-  "screwyourmobs.configuration.general": "§6General",
+  "screwyourmobs.configuration.general": "§6--- General ---",
   "screwyourmobs.configuration.general.tooltip": "§7Entities, keep-lists, and misc settings.",
   "screwyourmobs.configuration.general.button": "§6Edit...",
 
-  "screwyourmobs.configuration.rules": "§bRules",
+  "screwyourmobs.configuration.rules": "§b--- Rules ---",
   "screwyourmobs.configuration.rules.tooltip": "§7Rule loading and validation behavior.",
   "screwyourmobs.configuration.rules.button": "§bEdit...",
 
-  "screwyourmobs.configuration.debug": "§dDebug",
+  "screwyourmobs.configuration.debug": "§d--- Debug ---",
   "screwyourmobs.configuration.debug.tooltip": "§7Debug output controls.\n§7The master switch must be true for ANY\n§7of the channels below to fire.",
   "screwyourmobs.configuration.debug.button": "§dEdit...",
 
   "screwyourmobs.config.general.entitiesToKeep": "§eEntities to Keep",
   "screwyourmobs.config.general.entitiesToKeep.tooltip": "§7Entities that will §cNEVER§7 be removed,\n§7even if a rule matches them.\n\n§7Comma-separated entity IDs.\n§7Example: §fminecraft:wither, minecraft:ender_dragon",
 
+  "screwyourmobs.config.general.accentColor": "§eAccent Color",
+  "screwyourmobs.config.general.accentColor.tooltip": "§7Accent color used throughout\n§7the rule editor UI.\n\n§7Hex format: §fRRGGBB§7 or §fAARRGGBB.\n\n§7'§f#FFAA00§7' is the default color, amber.",
+
   "screwyourmobs.config.rules.validateOnLoad": "§bValidate Rules on Load",
   "screwyourmobs.config.rules.validateOnLoad.tooltip": "§7Check rule entity/dimension IDs against\n§7the registry on load.\n\n§7Warnings appear through the debug channels.",
+
+  "screwyourmobs.config.rules.maxSuggestions": "§bMax Suggestions",
+  "screwyourmobs.config.rules.maxSuggestions.tooltip": "§7Maximum number of entries shown in\n§7the editor's autocomplete lists.\n§7Default is §f§l250§r§7.",
 
   "screwyourmobs.config.debug.enabled": "§dEnable Debug Output",
   "screwyourmobs.config.debug.enabled.tooltip": "§7Master switch.\n§7When false, all debug output is silenced.",
@@ -50,6 +56,9 @@
 
   "screwyourmobs.config.debug.outputFile": "§dOutput to Debug File",
   "screwyourmobs.config.debug.outputFile.tooltip": "§7Append debug output to §fconfig/sym/debug.log\n§7with timestamps.",
+
+  "screwyourmobs.config.debug.devMode": "§4§k---§cDeveloper Mode§4§k---",
+  "screwyourmobs.config.debug.devMode.tooltip": "§7Enable experimental or developer-only features.\n§7Not intended for regular use.\n§l§n§cSome features may be unstable.",
 
   "_comment2": "Command translation keys",
 
@@ -123,6 +132,7 @@
   "screwyourmobs.screen.remove_dimension.message": "Remove '%s' from rule '%s'?",
 
   "screwyourmobs.screen.input.ok": "Confirm",
+  "screwyourmobs.screen.input.ok_and_stay": "Confirm + Add Another",
   "screwyourmobs.screen.input.no_matches": "No matches.",
 
   "screwyourmobs.screen.correction.use": "Use '%s'",
