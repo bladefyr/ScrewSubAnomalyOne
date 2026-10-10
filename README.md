@@ -30,4 +30,4 @@ Rules with the same filename in both locations: the per-world version wins.
 
 Filenames starting with `_` are ignored by the loader, useful for templates or disabled rules.
 
-It is recommended to just use the '/sym' or '/symrules' commands instead.
+It is recommended to just use the `/sym` or `/symrules` commands instead.
