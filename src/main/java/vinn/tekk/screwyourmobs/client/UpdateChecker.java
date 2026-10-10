@@ -20,7 +20,7 @@ public final class UpdateChecker {
 
     private UpdateChecker() {}
 
-    private static final String SLUG = "screwsubanomalyone";
+    private static final String SLUG = "screwyourmobs";
 
     private static final String MODRINTH_URL =
             "https://api.modrinth.com/v2/project/" + SLUG + "/version"
